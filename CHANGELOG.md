@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.1
+
+**Geändert**
+
+- Die Karte zeigt die Düngen-Zeile immer an. Hat eine Pflanze keinen Düngeplan, steht dort „Pause · Düngen · nicht nötig“. So sind alle Pflanzenkarten gleich hoch.
+
 ## 1.2.0
 
 **Neu**
