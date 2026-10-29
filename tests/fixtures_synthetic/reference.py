@@ -210,35 +210,35 @@ if __name__ == "__main__":
     with open(HERE / "rain_daily.csv", newline="") as f:
         rain = {dt.date.fromisoformat(r["date"]): float(r["mm"]) for r in csv.DictReader(f)}
 
-    print("7.4 Bewertungswert, plant_b 11.04.-14.04.")
+    print("7.4 evaluated value, plant_b 11.04.-14.04.")
     start = dt.datetime(2030, 4, 11, 0, 0, tzinfo=tz)
     end = dt.datetime(2030, 4, 14, 23, 20, tzinfo=tz)
     for thr in (55, 45):
         for method in ("raw", "median_24h", "max_24h"):
             print(f"  {thr} % {method:11} {threshold_crossings(b, start, end, thr, method)}")
 
-    print("Regen aus dem Zaehler (Ruecksetzung um Mitternacht UTC), pro Ortsdatum")
+    print("rain from the gauge (reset at midnight UTC), per local date")
     gauge = rain_from_gauge()
     print("  ", {d.strftime("%d.%m."): mm for d, mm in sorted(gauge.items())})
-    print("   gleich rain_daily.csv:", gauge == {d: mm for d, mm in rain.items() if mm})
+    print("   equals rain_daily.csv:", gauge == {d: mm for d, mm in rain.items() if mm})
 
-    print("7.5/7.6 Wassereintraege mit Einordnung")
+    print("7.5/7.6 water events with classification")
     print("  plant_a", classify(water_inputs(a), valve_events(2), rain))
     print("  plant_b", classify(water_inputs(b), valve_events(1), rain))
 
-    print("7.6.1 Ventil-Ereignisse")
+    print("7.6.1 valve events")
     for ch in (1, 2):
-        print(f"  Kanal {ch}", [t.strftime("%d.%m. %H:%M:%S") for t in valve_events(ch)])
+        print(f"  channel {ch}", [t.strftime("%d.%m. %H:%M:%S") for t in valve_events(ch)])
 
-    print("7.7 Regen-Modus (ganzjaehrig: 3, zuletzt 01.04. 20:00)")
+    print("7.7 rain mode (ganzjährig: 3, last done 01.04. 20:00)")
     resets, statuses = rain_mode_cherry()
-    print("  Ruecksetzungen", [(d.strftime("%d.%m."), mm) for d, mm in resets])
+    print("  resets", [(d.strftime("%d.%m."), mm) for d, mm in resets])
     print(
-        "  Status",
+        "  status",
         {d.strftime("%d.%m."): s for d, s in statuses.items() if d.day in (5, 7, 10, 13, 18, 20)},
     )
 
-    print("7.8 Plausibilitaet (Abfall >= 15)")
+    print("7.8 plausibility (drop >= 15)")
     for name, rows in (("plant_a", a), ("plant_b", b)):
         print(f"  {name}", [t.strftime("%d.%m. %H:%M") for t in big_drops(rows)])
 
@@ -246,18 +246,18 @@ if __name__ == "__main__":
         v = valid(rows)
         return max((v[i][0] - v[i - 1][0]).total_seconds() / 3600 for i in range(1, len(v)))
 
-    print("Laengste Luecke ohne Aenderung (h)", round(longest_gap(a), 1), round(longest_gap(b), 1))
+    print("longest gap without a change (h)", round(longest_gap(a), 1), round(longest_gap(b), 1))
 
     def fmt(spans):
         return [
-            (x.strftime("%d.%m. %H:%M"), y.strftime("%d.%m. %H:%M") if y else "offen")
+            (x.strftime("%d.%m. %H:%M"), y.strftime("%d.%m. %H:%M") if y else "open")
             for x, y in spans
         ]
 
-    print("7.10 Kaelte (temp_min 5, Hysterese 1)")
+    print("7.10 cold (temp_min 5, hysteresis 1)")
     print("  plant_a", fmt(cold_episodes("plant_a", 5.0)))
 
-    print("7.11 Zu nass (median_24h >= 95 fuer 48 h, Ende unter 92)")
+    print("7.11 too wet (median_24h >= 95 for 48 h, ends below 92)")
     wet_start = dt.datetime(2030, 4, 1, 12, 0, tzinfo=tz)
     wet_end = dt.datetime(2030, 4, 30, 9, 0, tzinfo=tz)
     for name, rows in (("plant_a", a), ("plant_b", b)):

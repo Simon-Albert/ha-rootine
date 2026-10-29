@@ -59,7 +59,7 @@ def test_heat_only_from_forecast_or_outdoor():
     assert p.heat == "heat_forecast"  # 31.5 >= 31
     p = step(p, temp_min=None, temp_max=32.0, forecast_max=30.0, current_heat=30.0)
     assert not p.active
-    # Pflanzensensor wird nie als current_heat übergeben: ohne Quelle keine Hitze
+    # the plant sensor is never passed as current_heat: no source, no heat
     assert not step(Protect(), temp_min=None, temp_max=32.0, current_cold=36.0).active
     assert step(Protect(), temp_min=None, temp_max=32.0, current_heat=33.0).heat == "heat_now"
 
@@ -71,7 +71,7 @@ def test_forecast_extremes():
         {"datetime": "2026-10-30T14:00:00+01:00", "temperature": 14},
         {"datetime": "2026-10-30T21:00:00+01:00", "temperature": 20},  # > 24 h
         {"datetime": "2026-10-29T10:00:00+01:00", "temperature": -9},  # Vergangenheit
-        {"datetime": "2026-10-29T23:00:00+01:00"},  # ohne Wert
+        {"datetime": "2026-10-29T23:00:00+01:00"},  # no value
     ]
     assert forecast_extremes(fc, NOW) == (3.5, 14.0)
     assert forecast_extremes([], NOW) == (None, None)

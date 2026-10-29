@@ -1,4 +1,4 @@
-"""Deutsche Kurztexte für Berichte und Sprachansagen (7.9)."""
+"""Short German texts for reports and spoken announcements (7.9)."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ _VERBS = {"Gießen": "gießen", "Düngen": "düngen"}
 
 
 def task_verb(task_name: str) -> str:
-    """„Gießen“ -> „gießen“, sonst „<Aufgabe> erledigen“."""
+    """Verb phrase of a task: "Gießen" -> "gießen", otherwise "<task> erledigen"."""
     return _VERBS.get(task_name, f"{task_name} erledigen")
 
 
@@ -24,13 +24,13 @@ def _degrees(value: float) -> str:
 @dataclass(frozen=True)
 class TextItem:
     plant: str
-    task: str  # Aufgabenschlüssel oder protect | too_wet | sensor_check
+    task: str  # task key or protect | too_wet | sensor_check
     task_name: str
     status: str  # ok|soon|due|overdue|protect|too_wet|check_sensor
-    days: int | None = None  # bei overdue: Tage überfällig (positiv); bei too_wet: Dauer
+    days: int | None = None  # overdue: days overdue (positive); too_wet: duration
     reason: str | None = None
-    value: float | None = None  # gemessene bzw. erwartete Temperatur
-    in_days: int | None = None  # fällig in n Tagen (nur für Vorschau mit days_ahead)
+    value: float | None = None  # measured or expected temperature
+    in_days: int | None = None  # due in n days (days_ahead preview and reminders)
 
 
 def item_text(item: TextItem) -> str:
@@ -89,7 +89,7 @@ def _join(parts: list[str]) -> str:
 
 
 def summary_text(items: list[TextItem]) -> str:
-    """Sammeltext: „Heute zu tun: …. Überfällig: ….“, Warnungen als eigene Sätze."""
+    """Summary: "Heute zu tun: …. Überfällig: ….", warnings as sentences of their own."""
     today = [f"{i.plant} {task_verb(i.task_name)}" for i in items if i.status == "due"]
     overdue = [f"{i.plant} {task_verb(i.task_name)}" for i in items if i.status == "overdue"]
     soon = [f"{i.plant} {task_verb(i.task_name)}" for i in items if i.status == "soon"]

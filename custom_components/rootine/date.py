@@ -1,4 +1,4 @@
-"""Datums-Entitäten: zuletzt erledigt (editierbar)."""
+"""Date entities: last done (editable)."""
 
 from __future__ import annotations
 

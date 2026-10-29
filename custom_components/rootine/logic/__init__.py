@@ -1,1 +1,1 @@
-"""Reine Fachlogik von Rootine. Importiert nichts aus homeassistant."""
+"""Pure domain logic of Rootine. Imports nothing from homeassistant."""

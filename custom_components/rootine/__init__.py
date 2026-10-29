@@ -1,4 +1,4 @@
-"""Rootine – Pflegeroutinen für Pflanzen."""
+"""Rootine – care routines for plants."""
 
 from __future__ import annotations
 
@@ -46,8 +46,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: RootineConfigEntry) -> b
         await manager.async_save()
 
     entry.async_on_unload(hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, _save_on_stop))
-    # Strukturänderungen (Subentries, Optionen) laden den Eintrag neu. Alltagswerte
-    # (Steckbrief, Standort, Knöpfe) liegen im Store und lösen nie ein Neuladen aus.
+    # Structural changes (subentries, options) reload the entry. Everyday values
+    # (profile, location, buttons) live in the store and never trigger a reload.
     entry.async_on_unload(entry.add_update_listener(_async_reload))
     _remove_orphans(hass, entry, manager)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -59,7 +59,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: RootineConfigEntry) -> b
 def _remove_orphans(
     hass: HomeAssistant, entry: RootineConfigEntry, manager: RootineManager
 ) -> None:
-    """Entitäten entfernter Aufgaben aus der Registry löschen."""
+    """Remove entities of removed tasks from the registry."""
     expected = manager.expected_unique_ids()
     registry = er.async_get(hass)
     for item in er.async_entries_for_config_entry(registry, entry.entry_id):

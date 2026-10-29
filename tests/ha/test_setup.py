@@ -48,7 +48,7 @@ async def test_plant_entities_and_device(hass):
 async def test_status_values(hass):
     entry = await setup_main(hass)
     await add_plant(hass, entry, "Kaffee", last_done="2026-10-25")
-    # Wasser: 25.10. + 8 = 02.11. -> ok. Dünger: Pause (01.10. bis ...) -> Plan endet 30.09.
+    # water: 25.10. + 8 = 02.11. -> ok. fertilizer: pause (from 01.10.) -> plan ends 30.09.
     assert hass.states.get("sensor.kaffee_watering").state == "ok"
     assert hass.states.get("sensor.kaffee_fertilizing").state == "rest"
     assert hass.states.get("sensor.kaffee_care_status").state == "ok"
@@ -97,7 +97,7 @@ async def test_location_select_no_reload(hass):
         blocking=True,
     )
     await hass.async_block_till_done()
-    assert entry.runtime_data is manager  # kein Neuladen
+    assert entry.runtime_data is manager  # no reload
     assert hass.states.get("select.kaffee_location").state == "outdoor"
     assert hass.states.get("sensor.kaffee_care_status").attributes["location"] == "outdoor"
 
@@ -105,7 +105,7 @@ async def test_location_select_no_reload(hass):
 async def test_midnight_recompute(hass, freezer):
     entry = await setup_main(hass)
     await add_plant(hass, entry, "Kaffee", last_done="2026-10-22", water="ganzjährig: 8")
-    assert hass.states.get("sensor.kaffee_watering").state == "soon"  # fällig 30.10.
+    assert hass.states.get("sensor.kaffee_watering").state == "soon"  # due 30.10.
     freezer.move_to("2026-10-30 00:00:10+01:00")
     async_fire_time_changed(hass, dt_util.now())
     await hass.async_block_till_done()

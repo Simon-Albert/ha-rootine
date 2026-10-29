@@ -1,4 +1,4 @@
-"""Basisklassen für Rootine-Entitäten."""
+"""Base classes for Rootine entities."""
 
 from __future__ import annotations
 

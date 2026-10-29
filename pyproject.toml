@@ -1,14 +1,14 @@
 [tool.ruff]
 target-version = "py313"
 line-length = 100
-extend-exclude = ["tests/fixtures/reference.py"]  # Orakel, unverändert lassen
+extend-exclude = ["tests/fixtures/reference.py"]  # local oracle for the real data, kept as is
 
 [tool.ruff.format]
 exclude = ["*.md"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
-ignore = ["RUF001", "RUF002", "RUF003", "RUF012"]  # deutsche Typografie (Gedankenstrich) ist gewollt
+ignore = ["RUF001", "RUF002", "RUF003", "RUF012"]  # German typography (dashes, quotes) is intended
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

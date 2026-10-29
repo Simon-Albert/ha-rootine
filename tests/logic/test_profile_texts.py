@@ -45,7 +45,7 @@ def test_apply_opb_keeps_manual():
     assert forced.common_name == "Kaffeestrauch"
     assert forced.care["watering"] == "Neu"
     assert forced.manual_fields == set()
-    assert edited.common_name == "Kaffee"  # Eingabe nicht verändert
+    assert edited.common_name == "Kaffee"  # input unchanged
 
 
 def test_update_fields_empty_deletes_and_marks():
@@ -54,7 +54,7 @@ def test_update_fields_empty_deletes_and_marks():
     assert "watering" not in p.care
     assert p.cultivar == "X"
     again = pr.apply_opb(p, pr.parse_opb(OPB))
-    assert "watering" not in again.care  # bleibt gelöscht
+    assert "watering" not in again.care  # stays cleared
 
 
 def test_from_form():

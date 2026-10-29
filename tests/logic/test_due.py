@@ -30,7 +30,7 @@ def test_status_progression():
 
 
 def test_year_wrap_interval_switch():
-    # Zeitraumwechsel bei überfälliger Aufgabe: bleibt überfällig, Intervall des letzten Erledigens
+    # period change while overdue: stays overdue, interval of the last time done
     r = compute_due(date(2026, 11, 3), state(2026, 10, 25), SEASONAL)
     assert r.interval == 8
     assert r.next_due == date(2026, 11, 2)  # 25.10. + 8
@@ -39,7 +39,7 @@ def test_year_wrap_interval_switch():
 
 def test_leap_year():
     r = compute_due(date(2028, 2, 29), state(2028, 2, 25), SEASONAL)
-    assert r.next_due == date(2028, 3, 4)  # 25.02. + 8: 29.02. zählt noch zum Winterplan
+    assert r.next_due == date(2028, 3, 4)  # 25.02. + 8: 29.02. still belongs to the winter plan
     assert r.status == DueStatus.OK
 
 
@@ -59,7 +59,7 @@ def test_season_start_not_triggered_if_done_in_season():
 
 
 def test_postpone_over_pause():
-    # 20.08. + 14 = 03.09. (Pause) + 5 Tage = 08.09. -> erster Tag nach der Pause
+    # 20.08. + 14 = 03.09. (pause) + 5 days = 08.09. -> first day after the pause
     r = compute_due(date(2026, 8, 25), state(2026, 8, 20, postponed_days=5), FERT)
     assert r.next_due == date(2027, 3, 1)
     assert r.after_pause

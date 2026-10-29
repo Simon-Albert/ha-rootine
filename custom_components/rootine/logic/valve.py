@@ -1,4 +1,4 @@
-"""Ventilläufe gruppieren und einem Wassereintrag zuordnen (7.6, 7.6.1)."""
+"""Group valve runs and match them to a water event (7.6, 7.6.1)."""
 
 from __future__ import annotations
 
@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 MERGE_GAP = timedelta(minutes=10)
-LEAD = timedelta(minutes=60)  # Lauf darf bis 60 min vor dem Anstieg beginnen
-LAG = timedelta(minutes=5)  # und bis 5 min danach
+LEAD = timedelta(minutes=60)  # a run may start up to 60 min before the rise
+LAG = timedelta(minutes=5)  # and up to 5 min after it
 
 Transition = tuple[datetime, str]
 
@@ -15,14 +15,14 @@ Transition = tuple[datetime, str]
 @dataclass(frozen=True)
 class ValveRun:
     start: datetime
-    end: datetime | None  # None = läuft noch
+    end: datetime | None  # None = still running
 
 
 def valve_runs(transitions: list[Transition]) -> list[ValveRun]:
-    """Läufe aus Zustandsübergängen. Beginn nur bei off -> on.
+    """Runs from state transitions. A run starts only on off -> on.
 
-    Übergänge aus unavailable/unknown zählen nicht. Ein Lauf endet mit dem nächsten
-    Zustand ungleich on.
+    Transitions from unavailable/unknown do not count. A run ends with the next state
+    that is not on.
     """
     runs: list[ValveRun] = []
     previous: str | None = None
@@ -41,7 +41,7 @@ def valve_runs(transitions: list[Transition]) -> list[ValveRun]:
 
 
 def valve_events(transitions: list[Transition]) -> list[ValveRun]:
-    """Läufe, die weniger als 10 min nach dem vorherigen Ende beginnen, werden zusammengefasst."""
+    """Runs starting less than 10 min after the previous one ended are merged."""
     events: list[ValveRun] = []
     for run in valve_runs(transitions):
         if events and events[-1].end is not None and run.start - events[-1].end < MERGE_GAP:
@@ -52,5 +52,5 @@ def valve_events(transitions: list[Transition]) -> list[ValveRun]:
 
 
 def valve_matches(events: list[ValveRun], water_ts: datetime) -> bool:
-    """Begann ein Lauf zwischen 60 min vor und 5 min nach dem Anstieg?"""
+    """Did a run start between 60 min before and 5 min after the rise?"""
     return any(water_ts - LEAD <= e.start <= water_ts + LAG for e in events)

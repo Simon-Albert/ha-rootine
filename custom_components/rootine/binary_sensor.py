@@ -1,4 +1,4 @@
-"""Binärsensoren: Aufgabe fällig."""
+"""Binary sensors: task due, protection needed, too wet, check sensor."""
 
 from __future__ import annotations
 

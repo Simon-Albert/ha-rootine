@@ -1,4 +1,4 @@
-"""Fälligkeit einer Aufgabe berechnen (7.2)."""
+"""Compute when a task is due (7.2)."""
 
 from __future__ import annotations
 
@@ -39,7 +39,7 @@ class DueStatus(StrEnum):
     CHECK_SENSOR = "check_sensor"
 
 
-# Rangfolge für den Pflegestatus: vorne = schlechtester Wert (8.3).
+# order for the care status: first = worst (8.3).
 CARE_RANK: tuple[DueStatus, ...] = (
     DueStatus.PROTECT,
     DueStatus.OVERDUE,
@@ -61,7 +61,7 @@ def worst_status(statuses: list[DueStatus]) -> DueStatus:
 
 @dataclass(frozen=True)
 class TaskConfig:
-    key: str  # "water", "fertilize" oder Slug
+    key: str  # "water", "fertilize" or a slug
     kind: TaskKind
     name: str
     schedule: Schedule

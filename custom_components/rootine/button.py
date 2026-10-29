@@ -1,4 +1,4 @@
-"""Knöpfe: Gegossen / Gedüngt / Erledigt."""
+"""Buttons: watered / fertilized / done, sensor checked."""
 
 from __future__ import annotations
 

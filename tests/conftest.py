@@ -38,9 +38,9 @@ def _parse_ts(text: str) -> datetime | None:
 
 
 def load_series(name: str, directory: Path = FIXTURES) -> list[tuple[datetime, float | None]]:
-    """CSV mit Zeitstempel in einer Spalte und Zustand in der letzten Spalte.
+    """CSV with a timestamp in one column and the state in the last column.
 
-    `unavailable`/`unknown` werden zu None. Fehlt die Datei, wird der Test übersprungen.
+    `unavailable`/`unknown` become None. A missing file skips the test.
     """
     path = directory / name
     if not path.exists():
@@ -61,7 +61,7 @@ def load_series(name: str, directory: Path = FIXTURES) -> list[tuple[datetime, f
 
 
 def load_states(name: str, directory: Path = FIXTURES) -> list[tuple[datetime, str]]:
-    """Wie load_series, aber Zustände als Text (Ventile: on/off/unavailable)."""
+    """Like load_series, but states as text (valves: on/off/unavailable)."""
     path = directory / name
     if not path.exists():
         if directory == SYNTHETIC:

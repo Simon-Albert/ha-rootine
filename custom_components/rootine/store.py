@@ -1,4 +1,4 @@
-"""Persistenter Zustand (.storage/rootine): Serialisierung und Store-Hülle (6.4)."""
+"""Persistent state (.storage/rootine): serialization, versioning and the store wrapper (6.4)."""
 
 from __future__ import annotations
 

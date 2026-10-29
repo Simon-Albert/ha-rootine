@@ -1,4 +1,4 @@
-"""Fixtures für Tests mit pytest-homeassistant-custom-component."""
+"""Fixtures for the tests with pytest-homeassistant-custom-component."""
 
 from __future__ import annotations
 

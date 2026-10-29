@@ -1,4 +1,4 @@
-"""Steckbrief: OpenPlantbook und manuelle Einträge zusammenführen (8.11), Foto-URL (8.10)."""
+"""Profile: merge OpenPlantbook and manual entries (8.11), photo URL (8.10)."""
 
 from __future__ import annotations
 
@@ -59,7 +59,7 @@ def _set_field(profile: Profile, name: str, value: str | None) -> None:
 
 
 def parse_opb(data: dict[str, Any]) -> dict[str, Any]:
-    """Relevante Felder aus der Antwort von openplantbook.get (8.6)."""
+    """Relevant fields from the openplantbook.get response (8.6)."""
     name = None
     for entry in data.get("common_names") or []:
         if entry.get("language_code") == "de" and entry.get("name"):
@@ -79,7 +79,7 @@ def parse_opb(data: dict[str, Any]) -> dict[str, Any]:
 
 
 def apply_opb(profile: Profile, opb: dict[str, Any], *, overwrite_manual: bool = False) -> Profile:
-    """Neu laden / verknüpfen: überschreibt nur nicht-manuelle Felder."""
+    """Refresh / link: overwrites only fields that are not manual."""
     new = replace(profile, care=dict(profile.care), manual_fields=set(profile.manual_fields))
     if overwrite_manual:
         new.manual_fields.clear()
@@ -94,7 +94,7 @@ def apply_opb(profile: Profile, opb: dict[str, Any], *, overwrite_manual: bool =
 
 
 def update_fields(profile: Profile, changes: dict[str, str | None]) -> Profile:
-    """Teiländerung (rootine.update_profile): Feld setzen, "" oder None löscht. Immer manuell."""
+    """Partial change (rootine.update_profile): set a field, "" or None clears it. Always manual."""
     new = replace(profile, care=dict(profile.care), manual_fields=set(profile.manual_fields))
     for name, value in changes.items():
         _set_field(new, name, value or None)
@@ -105,10 +105,10 @@ def update_fields(profile: Profile, changes: dict[str, str | None]) -> Profile:
 def from_form(
     submitted: dict[str, str | None], prefilled: dict[str, str | None] | None = None
 ) -> Profile:
-    """Steckbrief aus dem Formular. Geänderte Felder gelten als manuell.
+    """Profile from the form. Changed fields count as manual.
 
-    Von Hand angelegt (kein Vorbefüllen): jedes nicht leere Feld ist manuell, leere
-    bleiben offen, damit ein späteres Verknüpfen sie füllen kann.
+    Created by hand (nothing prefilled): every non-empty field is manual, empty ones stay
+    open so that linking later can fill them.
     """
     profile = Profile()
     prefilled = prefilled or {}
@@ -120,7 +120,7 @@ def from_form(
 
 
 def unlink(profile: Profile) -> Profile:
-    """OpenPlantbook-Verknüpfung lösen: übrige Felder bleiben und gelten als manuell."""
+    """Unlink OpenPlantbook: the remaining fields stay and count as manual."""
     new = replace(profile, care=dict(profile.care), manual_fields=set(profile.manual_fields))
     new.opb_pid = None
     new.opb_image_url = None
@@ -134,10 +134,10 @@ _UPLOAD_ID = re.compile(r"^[A-Za-z0-9_-]+$")
 
 
 def photo_url(profile: Profile) -> str | None:
-    """Anzeige-URL: eigenes Foto (Bild-Upload) -> OpenPlantbook-Bild -> None.
+    """Display URL: own photo (image upload) -> OpenPlantbook image -> None.
 
-    Andere Media-Quellen löst die HA-Schicht auf (media_source) und fällt sonst auf das
-    OpenPlantbook-Bild zurück.
+    Other media sources are resolved by the HA layer (media_source), which otherwise falls
+    back to the OpenPlantbook image.
     """
     photo = profile.photo
     if photo and photo.startswith(UPLOAD_PREFIX):

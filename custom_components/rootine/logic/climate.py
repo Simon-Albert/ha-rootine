@@ -1,4 +1,4 @@
-"""Kälte- und Hitzeschutz (7.10)."""
+"""Cold and heat protection (7.10)."""
 
 from __future__ import annotations
 
@@ -28,10 +28,10 @@ class Protect:
 def forecast_extremes(
     forecast: list[dict[str, Any]], now: datetime, hours: int = FORECAST_HOURS
 ) -> tuple[float | None, float | None]:
-    """Minimum und Maximum der Temperatur in den nächsten `hours` Stunden.
+    """Minimum and maximum temperature in the next `hours` hours.
 
-    Einträge mit `datetime` (ISO-String oder datetime) und `temperature`, optional `templow`.
-    Der Eintrag der laufenden Stunde zählt mit.
+    Entries with `datetime` (ISO string or datetime) and `temperature`, optionally `templow`.
+    The entry of the current hour counts.
     """
     lows: list[float] = []
     highs: list[float] = []
@@ -62,11 +62,11 @@ def evaluate_protect(
     forecast_max: float | None,
     outdoor: bool,
 ) -> Protect:
-    """Ein Schritt der Schutzbewertung.
+    """One step of the protection evaluation.
 
-    current_cold: eigener Temperatursensor (oder Außensensor, falls die Pflanze keinen hat).
-    current_heat: nur ein Außensensor, nie der Pflanzensensor (heizt sich in der Sonne auf).
-    Vorhersagen gelten nur draußen.
+    current_cold: the plant's own temperature sensor (or the outdoor sensor if it has none).
+    current_heat: only an outdoor sensor, never the plant sensor (it heats up in the sun).
+    Forecasts only apply outdoors.
     """
     if not outdoor:
         forecast_min = forecast_max = None

@@ -154,7 +154,7 @@ async def test_photo_set_replace_remove(hass):
     assert pic() == "/api/image/serve/BBB/512x512"
     await set_photo(None)
     assert pic() is None
-    assert entry.runtime_data is manager  # nie ein Neuladen
+    assert entry.runtime_data is manager  # never a reload
 
 
 async def test_reconfigure_water_reloads_and_keeps_state(hass):

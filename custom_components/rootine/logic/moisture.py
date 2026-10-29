@@ -1,4 +1,4 @@
-"""Bewertungswert, Wassereintrag, Plausibilität, Zu-nass (7.4, 7.5, 7.8, 7.11)."""
+"""Evaluated value, water events, plausibility, too wet (7.4, 7.5, 7.8, 7.11)."""
 
 from __future__ import annotations
 
@@ -13,8 +13,8 @@ GRID_POINTS = 96
 GRID_MIN_FILLED = 80
 MAX_AGE = timedelta(hours=36)
 
-JUMP_STEP = 10.0  # (a) Anstieg zwischen zwei gültigen Werten
-JUMP_WINDOW = 12.0  # (b) Anstieg innerhalb des Fensters
+JUMP_STEP = 10.0  # (a) rise between two valid values
+JUMP_WINDOW = 12.0  # (b) rise within the window
 JUMP_WINDOW_SPAN = timedelta(hours=3)
 EVENT_MERGE = timedelta(hours=6)
 
@@ -30,15 +30,15 @@ METHODS = ("median_24h", "max_24h", "raw")
 
 
 def valid_samples(samples: list[Sample]) -> list[tuple[datetime, float]]:
-    """Nur gültige Werte, nach Zeit sortiert. None (unavailable) wird übergangen."""
+    """Valid values only, sorted by time. None (unavailable) is skipped."""
     return sorted(((t, v) for t, v in samples if v is not None), key=lambda s: s[0])
 
 
 def grid_values(samples: list[Sample], now: datetime) -> list[float | None]:
-    """96 Rasterpunkte (alle 15 min, jüngster = now) mit Carry-forward.
+    """96 grid points (every 15 min, newest = now) with carry-forward.
 
-    Ein Rasterpunkt bekommt den zuletzt bekannten gültigen Wert, höchstens 36 h alt.
-    Rückgabe in zeitlicher Reihenfolge (ältester zuerst).
+    A grid point gets the last known valid value, at most 36 h old.
+    Returned in time order (oldest first).
     """
     valid = valid_samples(samples)
     values: list[float | None] = []
@@ -57,7 +57,7 @@ def grid_values(samples: list[Sample], now: datetime) -> list[float | None]:
 
 
 def latest_value(samples: list[Sample], now: datetime) -> float | None:
-    """Letzter gültiger Rohwert bis now, höchstens 36 h alt."""
+    """Last valid raw value up to now, at most 36 h old."""
     valid = [s for s in valid_samples(samples) if s[0] <= now]
     if not valid or now - valid[-1][0] > MAX_AGE:
         return None
@@ -65,7 +65,7 @@ def latest_value(samples: list[Sample], now: datetime) -> float | None:
 
 
 def evaluate(samples: list[Sample], now: datetime, method: str = "median_24h") -> float | None:
-    """Bewertungswert nach Methode. None, wenn zu wenig Daten (7.4)."""
+    """Evaluated value by method. None when there is too little data (7.4)."""
     if method == "raw":
         return latest_value(samples, now)
     grid = [v for v in grid_values(samples, now) if v is not None]
@@ -90,9 +90,9 @@ class WaterEvent:
 def detect_water_trigger(
     history: list[tuple[datetime, float]], t: datetime, v: float
 ) -> tuple[str, float] | None:
-    """Prüft einen neuen gültigen Wert v zur Zeit t gegen die vorherigen gültigen Werte.
+    """Check a new valid value v at time t against the previous valid values.
 
-    history: gültige Werte vor t, aufsteigend. Gibt (Regel, Vergleichswert) oder None.
+    history: valid values before t, ascending. Returns (rule, reference value) or None.
     """
     if not history:
         return None
@@ -102,7 +102,7 @@ def detect_water_trigger(
 
     window_start = t - JUMP_WINDOW_SPAN
     candidates = [val for ts, val in history if ts >= window_start]
-    # Der letzte Wert vor dem Fenster galt zu Fensterbeginn noch (Carry-forward).
+    # the last value before the window still applied when the window began (carry-forward).
     before_window = [val for ts, val in history if ts < window_start]
     if before_window:
         candidates.append(before_window[-1])
@@ -114,7 +114,7 @@ def detect_water_trigger(
 
 
 def detect_water_events(samples: list[Sample]) -> list[WaterEvent]:
-    """Alle Wassereinträge in einer Messreihe. Treffer innerhalb von 6 h gehören zum Ereignis."""
+    """All water events in a series. Hits within 6 h belong to the same event."""
     events: list[WaterEvent] = []
     history: list[tuple[datetime, float]] = []
     last_event: datetime | None = None
@@ -127,7 +127,7 @@ def detect_water_events(samples: list[Sample]) -> list[WaterEvent]:
     return events
 
 
-# --- Plausibilität (7.8) -----------------------------------------------------------------
+# --- plausibility (7.8) ------------------------------------------------------------------
 
 
 def is_implausible_drop(previous: float, value: float) -> bool:
@@ -139,7 +139,7 @@ def is_stale(
     last_reported: datetime | None,
     unavailable_since: datetime | None = None,
 ) -> bool:
-    """Sensor meldet nicht: > 36 h ohne Meldung oder > 6 h durchgehend unavailable."""
+    """Sensor not reporting: > 36 h without a report or > 6 h unavailable in a row."""
     if unavailable_since is not None and now - unavailable_since > UNAVAILABLE_AFTER:
         return True
     return last_reported is not None and now - last_reported > STALE_AFTER
@@ -161,7 +161,7 @@ class WetState:
 def update_too_wet(
     state: WetState, value: float | None, now: datetime, moisture_max: float
 ) -> WetState:
-    """Ein Schritt der Zu-nass-Erkennung mit dem Bewertungswert (median_24h)."""
+    """One step of the too-wet detection with the evaluated value (median_24h)."""
     if value is None:
         return state
     if value >= moisture_max:

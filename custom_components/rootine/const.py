@@ -1,4 +1,4 @@
-"""Konstanten für Rootine."""
+"""Constants for Rootine."""
 
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ CONF_BATTERY_ENTITY = "battery_entity"
 CONF_VALVE_ENTITY = "valve_entity"
 CONF_MOISTURE_METHOD = "moisture_method"
 CONF_VALVE_COUNTS = "valve_counts_as_watering"
-CONF_SEED = "seed"  # Startwerte für den Store (Steckbrief, Standort, zuletzt erledigt)
+CONF_SEED = "seed"  # initial store values (profile, location, last done)
 TASK_KEY = "key"
 TASK_KIND = "kind"
 TASK_NAME = "name"
@@ -51,7 +51,7 @@ WARN_PROTECT = "protect"
 WARN_TOO_WET = "too_wet"
 WARN_SENSOR = "sensor_check"
 
-# Quellen für „zuletzt erledigt“
+# sources of "last done"
 SOURCE_BUTTON = "button"
 SOURCE_TODO = "todo"
 SOURCE_SERVICE = "service"
@@ -68,7 +68,7 @@ STORE_MINOR_VERSION = 2
 STORE_SAVE_DELAY = 10
 LOG_LIMIT = 200
 
-# Steckbrief-Felder im Formular (Formularname -> Feldname der Logik)
+# profile fields in the form (form name -> field name in the logic)
 PROFILE_FORM_FIELDS = {
     "common_name": "common_name",
     "species": "species",

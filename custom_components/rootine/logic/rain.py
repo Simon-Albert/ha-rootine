@@ -1,4 +1,4 @@
-"""Regen seit dem letzten Erledigen (7.7) und Einordnung (7.6)."""
+"""Rain since the task was last done (7.7) and classification of water events (7.6)."""
 
 from __future__ import annotations
 
@@ -49,7 +49,7 @@ def effective_rain(
     last_done: datetime,
     rain_at_done: float | None,
 ) -> float:
-    """Regen von gestern und heute, nur der Anteil nach last_done."""
+    """Rain of yesterday and today, only the part after last_done."""
     total = 0.0
     done_day = last_done.date()
     for day in (today - timedelta(days=1), today):
@@ -73,7 +73,7 @@ def rain_resets(
 
 
 def recent_rain(rain_days: dict[str, float], today: date) -> float:
-    """Heute plus gestern, für die Einordnung eines Wassereintrags (7.6)."""
+    """Today plus yesterday, for classifying a water event (7.6)."""
     return rain_days.get(today.isoformat(), 0.0) + rain_days.get(
         (today - timedelta(days=1)).isoformat(), 0.0
     )

@@ -15,7 +15,7 @@ def test_grid_carry_forward_and_none_skipped():
     samples = [(hours_ago(30), 50.0), (hours_ago(10), None), (hours_ago(5), 40.0)]
     grid = m.grid_values(samples, NOW)
     assert len(grid) == 96
-    assert grid[0] == 50.0  # 23h45 zurück, Wert 30 h alt -> noch gültig (<36 h)
+    assert grid[0] == 50.0  # 23h45 back, value 30 h old -> still valid (<36 h)
     assert grid[-1] == 40.0
     assert None not in grid
 
@@ -23,14 +23,14 @@ def test_grid_carry_forward_and_none_skipped():
 def test_grid_max_age():
     grid = m.grid_values([(hours_ago(40), 50.0)], NOW)
     assert grid[0] == 50.0  # 16 h alt
-    assert grid[-1] is None  # 40 h alt: über 36 h
+    assert grid[-1] is None  # 40 h old: over 36 h
 
 
 def test_evaluate_methods():
     samples = [(hours_ago(30), 60.0), (hours_ago(11.9), 40.0)]
     assert m.evaluate(samples, NOW, "raw") == 40.0
     assert m.evaluate(samples, NOW, "max_24h") == 60.0
-    # 12 h bei 60, 12 h bei 40 -> Median zwischen beiden Hälften
+    # 12 h at 60, 12 h at 40 -> median between both halves
     assert m.evaluate(samples, NOW, "median_24h") == 50.0
 
 
@@ -60,7 +60,7 @@ def test_event_window():
 
 
 def test_event_window_includes_value_before_window():
-    # 30 h kein Wert bei 40 (Carry-forward), dann +6, +6 innerhalb 3 h
+    # 30 h no value at 40 (carry-forward), then +6, +6 within 3 h
     events = m.detect_water_events(series((0, 40), (1800, 46), (1860, 52)))
     assert [e.ts for e in events] == [datetime(2026, 10, 2, 7, 0, tzinfo=TZ)]
 
@@ -72,7 +72,7 @@ def test_no_event_for_slow_rise_and_small_steps():
 def test_events_merge_within_6h():
     events = m.detect_water_events(series((0, 30), (10, 70), (120, 100), (370, 100), (1000, 50)))
     assert len(events) == 1
-    # Abfall dazwischen, neues Ereignis nach > 6 h
+    # drop in between, new event after > 6 h
     events = m.detect_water_events(series((0, 30), (10, 70), (500, 40), (520, 80)))
     assert len(events) == 2
 
@@ -108,7 +108,7 @@ def test_too_wet_cycle():
     assert state.above_since == t
     state = m.update_too_wet(state, 97, t + timedelta(hours=48), 95)
     assert state.active
-    # Zwischen max-3 und max: bleibt aktiv, Zeitlauf zurückgesetzt
+    # between max-3 and max: stays active, timer reset
     state = m.update_too_wet(state, 93, t + timedelta(hours=49), 95)
     assert state.active
     assert state.above_since is None

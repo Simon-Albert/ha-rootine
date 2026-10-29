@@ -1,4 +1,4 @@
-"""Auswahl: Standort (draußen/drinnen)."""
+"""Select: location (outdoor/indoor)."""
 
 from __future__ import annotations
 

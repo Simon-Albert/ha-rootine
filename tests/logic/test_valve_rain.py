@@ -13,7 +13,7 @@ def tr(*pairs):
 
 def test_runs_need_off_to_on():
     runs = valve.valve_runs(tr((0, "unavailable"), (1, "on"), (2, "off"), (3, "on"), (4, "off")))
-    assert len(runs) == 1  # on aus unavailable zählt nicht
+    assert len(runs) == 1  # on after unavailable does not count
     assert runs[0].start == T0 + timedelta(minutes=3)
 
 
@@ -53,9 +53,9 @@ def test_classify():
 def test_effective_rain_window_and_baseline():
     days = {"2026-10-14": 2.0, "2026-10-15": 1.0, "2026-10-16": 4.5}
     done = datetime(2026, 10, 15, 8, tzinfo=TZ)
-    # gestern = 15.10. (Tag des Erledigens, minus Basis 0.5), heute = 16.10.
+    # yesterday = 15.10. (day it was done, minus base 0.5), today = 16.10.
     assert rain.effective_rain(days, date(2026, 10, 16), done, 0.5) == 0.5 + 4.5
-    # Tage vor gestern zählen nicht
+    # days before yesterday do not count
     old = datetime(2026, 10, 10, 8, tzinfo=TZ)
     assert rain.effective_rain(days, date(2026, 10, 16), old, 0.0) == 1.0 + 4.5
     assert rain.rain_resets(days, date(2026, 10, 16), old, 0.0, 5.0)

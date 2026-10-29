@@ -1,4 +1,4 @@
-"""Planschreibweise parsen und formatieren, Zeiträume bestimmen (7.1)."""
+"""Parse and format the schedule notation, find periods (7.1)."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from enum import StrEnum
 
-DayMonth = tuple[int, int]  # (Tag, Monat)
+DayMonth = tuple[int, int]  # (day, month)
 
 
 class TaskKind(StrEnum):
@@ -26,17 +26,17 @@ class WaterMode(StrEnum):
 @dataclass(frozen=True)
 class Period:
     start: DayMonth  # inklusive
-    end: DayMonth  # inklusive, darf über den Jahreswechsel gehen
+    end: DayMonth  # inclusive, may span the turn of the year
     interval_days: int | None  # None = Pause
 
 
 @dataclass(frozen=True)
 class Schedule:
-    periods: tuple[Period, ...]  # Lücken bedeuten Pause
+    periods: tuple[Period, ...]  # gaps mean pause
 
 
 class ScheduleError(ValueError):
-    """Planfehler mit Übersetzungsschlüssel und Platzhaltern."""
+    """Schedule error with translation key and placeholders."""
 
     def __init__(self, key: str, **placeholders: str | int) -> None:
         super().__init__(key)
@@ -59,7 +59,7 @@ def _valid_day_month(day: int, month: int) -> bool:
 
 
 def parse_schedule(text: str) -> Schedule:
-    """Plantext in einen Schedule umwandeln. Wirft ScheduleError mit Zeilennummer."""
+    """Turn schedule text into a Schedule. Raises ScheduleError with the line number."""
     periods: list[tuple[int, Period]] = []
     for number, raw in enumerate(text.splitlines(), start=1):
         if not raw.strip():
@@ -104,7 +104,7 @@ def _check_overlaps(periods: list[tuple[int, Period]]) -> None:
 
 
 def _days_of(period: Period) -> list[DayMonth]:
-    """Alle (Tag, Monat) des Zeitraums, gerechnet im Schaltjahr."""
+    """All (day, month) of the period, counted in a leap year."""
     day = date(_LEAP_YEAR, period.start[1], period.start[0])
     end = date(_LEAP_YEAR, period.end[1], period.end[0])
     result: list[DayMonth] = []
@@ -118,7 +118,7 @@ def _days_of(period: Period) -> list[DayMonth]:
 
 
 def format_schedule(schedule: Schedule) -> str:
-    """Schedule zurück in Text (Roundtrip zu parse_schedule)."""
+    """Schedule back to text (round trip with parse_schedule)."""
     lines = []
     for p in schedule.periods:
         value = "Pause" if p.interval_days is None else str(p.interval_days)
@@ -136,7 +136,7 @@ def _key(d: date) -> DayMonth:
 
 
 def _normalize(point: DayMonth, year: int, *, is_end: bool) -> DayMonth:
-    """29.02. in Nicht-Schaltjahren: als Ende der 28.02., als Anfang der 01.03."""
+    """29.02. in non-leap years: as an end the 28.02., as a start the 01.03."""
     if point == (29, 2) and not calendar.isleap(year):
         return (28, 2) if is_end else (1, 3)
     return point
@@ -146,7 +146,7 @@ def _contains(period: Period, d: date) -> bool:
     start = _normalize(period.start, d.year, is_end=False)
     end = _normalize(period.end, d.year, is_end=True)
     if end == (28, 2) and calendar.isleap(d.year):
-        end = (29, 2)  # „bis 28.02.“ schließt im Schaltjahr den 29.02. ein
+        end = (29, 2)  # "until 28.02." includes 29.02. in a leap year
     k = (d.month, d.day)
     s, e = (start[1], start[0]), (end[1], end[0])
     if s <= e:
@@ -155,7 +155,7 @@ def _contains(period: Period, d: date) -> bool:
 
 
 def period_for(schedule: Schedule, d: date) -> Period | None:
-    """Zeitraum, der d enthält. None = Lücke (Pause)."""
+    """Period containing d. None = gap (pause)."""
     for period in schedule.periods:
         if _contains(period, d):
             return period
@@ -163,13 +163,13 @@ def period_for(schedule: Schedule, d: date) -> Period | None:
 
 
 def interval_for(schedule: Schedule, d: date) -> int | None:
-    """Intervall an Tag d. None bei Pause oder Lücke."""
+    """Interval on day d. None during a pause or gap."""
     period = period_for(schedule, d)
     return None if period is None else period.interval_days
 
 
 def occurrence_start(period: Period, d: date) -> date:
-    """Startdatum des Vorkommens von period, das d enthält."""
+    """Start date of the occurrence of period that contains d."""
     day, month = _normalize(period.start, d.year, is_end=False)
     candidate_year = d.year
     if (month, day) > (d.month, d.day):
@@ -179,7 +179,7 @@ def occurrence_start(period: Period, d: date) -> date:
 
 
 def first_active_day(schedule: Schedule, d: date) -> date | None:
-    """Erster Tag ab d (einschließlich) mit Intervall. None, wenn es nie einen gibt."""
+    """First day from d (inclusive) with an interval. None if there never is one."""
     for offset in range(367):
         day = d + timedelta(days=offset)
         if interval_for(schedule, day) is not None:

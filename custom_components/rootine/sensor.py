@@ -1,4 +1,4 @@
-"""Sensoren: Pflegestatus, Aufgabenstatus, Fälligkeitsdatum, Sammelsensor."""
+"""Sensors: care status, task status, due date, evaluated moisture, hub count."""
 
 from __future__ import annotations
 
