@@ -1,5 +1,35 @@
 # Changelog
 
+## 1.1.1
+
+Korrekturen aus dem Test im echten System.
+
+**Behoben**
+
+- **Ventil nach Pause:** Ruhte ein Ventil länger als zwei Tage, wurde der nächste Lauf nicht erkannt.
+- **Sensor-Gießen zählt weiter:** Ist Gießen per Sensor fällig, heißt es ab dem Folgetag „seit 2 Tagen überfällig“
+  statt jeden Tag „heute fällig“. Der Beginn wird gespeichert und übersteht Neustarts.
+- **Nachtragen:** `mark_done` mit einem Zeitpunkt in der Vergangenheit setzt „zuletzt“ nicht mehr zurück.
+  „Zuletzt“ ist immer der jüngste gültige Verlaufseintrag (wie bei „Rückgängig“). Eine Korrektur über das Datum
+  bleibt möglich; spätere Einträge gelten dann als rückgängig gemacht.
+- **Verlauf:** `get_history` ist nach Zeit sortiert, auch über die Zeitumstellung hinweg.
+- **Ein Eintrag pro Gießen:** Ventillauf und dadurch ausgelöster Feuchtesprung ergeben nur noch einen Eintrag;
+  kommt die Ventilmeldung nach dem Sprung, wird der Eintrag als „Ventil“ eingeordnet.
+- **Karte:** Beim Bearbeiten des Steckbriefs gehen Eingaben nicht mehr verloren, wenn Verlauf oder Diagramm nachladen.
+
+**Neu**
+
+- **Foto direkt im Formular aufnehmen oder hochladen** (Bild-Upload im Medien-Selector). Bilder aus anderen
+  Medienquellen werden aufgelöst und angezeigt; lässt sich ein Bild nicht anzeigen, lehnt das Formular es mit
+  Hinweis ab, statt still auf das OpenPlantbook-Bild zurückzufallen.
+- **Weniger Datenbank:** Steckbrief, Verlauf, Aufgaben, Warnungen und Feuchte-Details (Pflegestatus) sowie Listen und
+  Text des Sammelsensors werden nicht mehr im Recorder gespeichert.
+
+**Entwicklung**
+
+- Synthetische Testdaten mit eigenem Generator und unabhängigem Orakel; CI testet damit, die anonymisierten
+  Echtdaten bleiben lokal. Tests gegen HA 2026.10.4 (`pytest-homeassistant-custom-component==0.13.375`).
+
 ## 1.1.0
 
 - **Karte:** Feuchte-Balken mit Gieß-Schwelle, farbiger Statusrand, Zusammenfassung im Kopf („1 überfällig · 2 heute“),

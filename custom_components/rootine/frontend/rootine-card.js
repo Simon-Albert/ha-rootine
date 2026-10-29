@@ -5,7 +5,7 @@
  *         entity: sensor.<plant>_care_status     # one plant
  *         mode: overview                          # or: all plants
  */
-const VERSION = "1.1.0";
+const VERSION = "1.1.1";
 
 const T = {
   de: {
