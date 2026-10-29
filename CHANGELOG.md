@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.3
+
+**Geändert**
+
+- Jede Pflanzenkarte zeigt genau drei Aufgabenzeilen: Gießen, Düngen und die dringendste weitere Aufgabe (mit „+n“, wenn es mehr gibt). Gibt es nichts, steht dort ein gedimmter Hinweis. So sind alle Karten im Raster gleich hoch, auch bei Pflanzen mit vielen Aufgaben.
+- Der Details-Dialog behält beim Nachladen von Verlauf und Diagramm seine Scrollposition.
+
 ## 1.2.2
 
 **Geändert**

@@ -17,7 +17,7 @@ const T = {
     reason: { cold_now: "zu kalt", cold_forecast: "Kälte erwartet", heat_now: "zu heiß",
       heat_forecast: "Hitze erwartet", drop: "Wert stark gefallen", stale: "meldet nicht",
       battery_low: "Batterie schwach" },
-    done: "Erledigt", noFertilize: "Düngen", noFertilizeHint: "nicht nötig", water: "Gegossen", fertilize: "Gedüngt", postpone: "Verschieben",
+    done: "Erledigt", noFertilize: "Düngen", noFertilizeHint: "nicht nötig", noOther: "Weitere Aufgaben", noOtherHint: "keine", water: "Gegossen", fertilize: "Gedüngt", postpone: "Verschieben",
     days: (n) => (n === 0 ? "heute" : n === 1 ? "morgen" : n < 0 ? `seit ${-n} Tg.` : `in ${n} Tg.`),
     details: "Details", close: "Schließen", edit: "Bearbeiten", save: "Speichern", cancel: "Abbrechen",
     photo: "Foto ändern", history: "Verlauf", undo: "Rückgängig", undone: "rückgängig",
@@ -45,7 +45,7 @@ const T = {
     reason: { cold_now: "too cold", cold_forecast: "cold expected", heat_now: "too hot",
       heat_forecast: "heat expected", drop: "value dropped", stale: "not reporting",
       battery_low: "battery low" },
-    done: "Done", noFertilize: "Fertilize", noFertilizeHint: "not needed", water: "Watered", fertilize: "Fertilized", postpone: "Postpone",
+    done: "Done", noFertilize: "Fertilize", noFertilizeHint: "not needed", noOther: "Other tasks", noOtherHint: "none", water: "Watered", fertilize: "Fertilized", postpone: "Postpone",
     days: (n) => (n === 0 ? "today" : n === 1 ? "tomorrow" : n < 0 ? `${-n}d overdue` : `in ${n}d`),
     details: "Details", close: "Close", edit: "Edit", save: "Save", cancel: "Cancel",
     photo: "Change photo", history: "History", undo: "Undo", undone: "undone",
@@ -130,7 +130,7 @@ ha-card { padding: 12px; overflow: hidden; background: var(--ha-card-background,
 .chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px;
   font-size: .8em; font-weight: 600; color: #fff; white-space: nowrap; }
 .tasks { display: flex; flex-direction: column; gap: 4px; }
-.task { display: flex; align-items: center; gap: 8px; font-size: .92em; }
+.task { display: flex; align-items: center; gap: 8px; font-size: .92em; min-height: 30px; }
 .task .label { flex: 1; min-width: 3.5em; }
 .task.none { opacity: .7; }
 .task.none .when { margin-right: 4px; }
@@ -326,7 +326,9 @@ class RootineCard extends HTMLElement {
            <button class="${this._filter === "needs" ? "" : "ghost"}" data-filter="needs">${t.needs}</button>
            <button class="${this._filter === "all" ? "" : "ghost"}" data-filter="all">${t.all}</button></div></div>`
       : "";
+    const keep = this.shadowRoot.querySelector(".dialog")?.scrollTop || 0;
     this.shadowRoot.innerHTML = `<style>${STYLE}</style><ha-card class="${this._compact ? "compact" : ""}">${head}${body}</ha-card>${this._dialog ? this._dialogHtml() : ""}${this._confirm ? this._confirmHtml() : ""}`;
+    if (keep) { const dlg = this.shadowRoot.querySelector(".dialog"); if (dlg) dlg.scrollTop = keep; }
     this._bind();
     if (this._dialog) this._afterDialog();
     if (this._confirm) this._afterConfirm();
@@ -401,16 +403,25 @@ class RootineCard extends HTMLElement {
     const sub = [a.profile.common_name, a.profile.cultivar && `'${a.profile.cultivar}'`].filter(Boolean).join(" ");
     const warns = (a.warnings || []).map((w) =>
       `<span class="chip" style="background:${COLORS[w.key === "sensor_check" ? "check_sensor" : w.key]}" title="${esc(t.reason[w.reason] || "")}">${esc(t.warn[w.key])}${w.reason ? ` · ${esc(t.reason[w.reason] || w.reason)}` : ""}</span>`).join("");
-    const tasks = this._items(a).map((item) => `<div class="task">${this._chip(item.status)}<span class="label">${esc(item.name)}</span>
-        <span class="when">${esc(this._when(item))}</span><button data-done="${esc(item.key)}" data-plant="${esc(p.id)}">${esc(this._verb(item))}</button></div>`).join("");
-    const noFert = a.tasks?.fertilize ? "" : `<div class="task none"><span class="chip" style="background:${COLORS.rest}">${esc(t.status.rest || "")}</span><span class="label">${esc(t.noFertilize)}</span><span class="when">${esc(t.noFertilizeHint)}</span></div>`;
+    const row = (item, extra = "") => `<div class="task">${this._chip(item.status)}<span class="label">${esc(item.name)}${extra}</span>
+        <span class="when">${esc(this._when(item))}</span><button data-done="${esc(item.key)}" data-plant="${esc(p.id)}">${esc(this._verb(item))}</button></div>`;
+    const hint = (label, text) => `<div class="task none"><span class="chip" style="background:${COLORS.rest}">${esc(t.status.rest || "")}</span><span class="label">${esc(label)}</span><span class="when">${esc(text)}</span></div>`;
+    // every card has the same three rows so the cards in a grid are equally tall:
+    // watering, fertilizing (or a hint) and the most urgent other task (or a hint)
+    const items = this._items(a);
+    const isCore = (i) => !i.oneoff && (i.key === "water" || i.key === "fertilize");
+    const others = items.filter((i) => !isCore(i));
+    const urgent = others.length ? this._urgent(others) : null;
+    const tasks = items.filter((i) => !i.oneoff && i.key === "water").map((i) => row(i)).join("")
+      + (a.tasks?.fertilize ? row(items.find((i) => !i.oneoff && i.key === "fertilize")) : hint(t.noFertilize, t.noFertilizeHint))
+      + (urgent ? row(urgent, others.length > 1 ? ` <span class="muted">+${others.length - 1}</span>` : "") : hint(t.noOther, t.noOtherHint));
     const m = a.moisture;
     const bar = m && m.value != null
       ? `<div><div class="bar"><div class="fill" style="width:${Math.max(0, Math.min(100, m.value))}%"></div>${m.threshold != null ? `<div class="mark" style="left:${m.threshold}%" title="${esc(t.threshold)} ${m.threshold} %"></div>` : ""}</div>
          <div class="barlabel"><span>${esc(t.eval)} ${Math.round(m.value)} %</span><span>${m.threshold != null ? `${esc(t.threshold)} ${m.threshold} %` : ""}</span></div></div>` : "";
     return `<div class="plant" style="--accent:${COLORS[p.state] || COLORS.unknown}"><div class="top">${pic}<div class="title"><div class="name">${esc(p.name)}</div>
       <div class="sub">${esc(sub || "")} · ${esc(t[a.location] || a.location)}</div></div>${this._chip(p.state)}</div>
-      ${warns ? `<div class="warn">${warns}</div>` : ""}${bar}<div class="tasks">${tasks}${noFert}</div>
+      ${warns ? `<div class="warn">${warns}</div>` : ""}${bar}<div class="tasks">${tasks}</div>
       <div class="actions"><button class="ghost" data-details="${esc(p.id)}">${t.details}</button></div></div>`;
   }
 
