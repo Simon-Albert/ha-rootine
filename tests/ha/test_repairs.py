@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-from homeassistant.components.repairs.issue_handler import async_process_repairs_platforms
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.setup import async_setup_component
@@ -91,25 +90,31 @@ async def test_disabled_entity_counts_as_missing(hass):
     assert set(_issues(hass)) == {"missing_main_rain_entity"}
 
 
-async def _fix(hass, issue_id, user_input):
+async def _fix(hass, hass_client, issue_id, user_input):
+    """Run the fix flow through the repairs HTTP API, as the frontend does."""
     assert await async_setup_component(hass, "repairs", {})
-    await async_process_repairs_platforms(hass)
-    flows = hass.data["repairs"]["flow_manager"]
-    result = await flows.async_init(DOMAIN, data={"issue_id": issue_id})
+    await hass.async_block_till_done()
+    client = await hass_client()
+    resp = await client.post(
+        "/api/repairs/issues/fix", json={"handler": DOMAIN, "issue_id": issue_id}
+    )
+    assert resp.status == 200, await resp.text()
+    result = await resp.json()
     assert result["type"] == "form" and result["step_id"] == "relink"
     assert result["description_placeholders"]["entity"]
-    result = await flows.async_configure(result["flow_id"], user_input)
+    resp = await client.post(f"/api/repairs/issues/fix/{result['flow_id']}", json=user_input)
+    assert resp.status == 200, await resp.text()
     await hass.async_block_till_done()
-    return result
+    return await resp.json()
 
 
-async def test_fix_flow_links_the_new_entity(hass):
+async def test_fix_flow_links_the_new_entity(hass, hass_client):
     entry, sid = await _plant_with_sensor(hass)
     hass.states.async_remove(MOISTURE)
     await hass.async_block_till_done()
     hass.states.async_set("sensor.test_moisture_2", "38", {"device_class": "moisture"})
     result = await _fix(
-        hass, f"missing_{sid}_moisture_entity", {"entity_id": "sensor.test_moisture_2"}
+        hass, hass_client, f"missing_{sid}_moisture_entity", {"entity_id": "sensor.test_moisture_2"}
     )
     assert result["type"] == "create_entry"
     assert entry.subentries[sid].data["moisture_entity"] == "sensor.test_moisture_2"
@@ -118,9 +123,9 @@ async def test_fix_flow_links_the_new_entity(hass):
     assert plant.moisture_entity == "sensor.test_moisture_2"
 
 
-async def test_fix_flow_can_remove_the_link(hass):
+async def test_fix_flow_can_remove_the_link(hass, hass_client):
     entry = await setup_main(hass, {"weather_entity": "weather.gone"})
-    result = await _fix(hass, "missing_main_weather_entity", {})
+    result = await _fix(hass, hass_client, "missing_main_weather_entity", {})
     assert result["type"] == "create_entry"
     assert "weather_entity" not in entry.options
     assert _issues(hass) == {}
@@ -155,5 +160,5 @@ def test_every_issue_is_translated(language):
     issues = json.loads(path.read_text(encoding="utf-8"))["issues"]
     for key in (*repairs.MAIN_KEYS, *repairs.PLANT_KEYS):
         issue = issues[f"missing_{key}"]
-        assert "{entity}" in issue["description"] and "{plant}" in issue["title"]
-        assert "relink" in issue["fix_flow"]["step"]
+        assert "{plant}" in issue["title"] and "description" not in issue  # hassfest rule
+        assert "{entity}" in issue["fix_flow"]["step"]["relink"]["description"]
