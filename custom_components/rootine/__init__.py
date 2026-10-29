@@ -12,6 +12,7 @@ from homeassistant.helpers.typing import ConfigType
 from .card import async_register_card
 from .const import DOMAIN
 from .manager import RootineManager
+from .repairs import async_watch_links
 from .services import async_register_services
 
 PLATFORMS = [
@@ -50,6 +51,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: RootineConfigEntry) -> b
     _remove_orphans(hass, entry, manager)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     await manager.async_start()
+    entry.async_on_unload(async_watch_links(hass, entry))
     return True
 
 

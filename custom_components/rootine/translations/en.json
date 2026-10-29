@@ -646,5 +646,133 @@
         }
       }
     }
+  },
+  "issues": {
+    "missing_moisture_entity": {
+      "title": "{plant}: Moisture sensor missing",
+      "fix_flow": {
+        "step": {
+          "relink": {
+            "title": "Choose a new moisture sensor",
+            "description": "Previously: `{entity}`. Leave empty to unlink.",
+            "data": {
+              "entity_id": "New entity"
+            }
+          }
+        },
+        "abort": {
+          "not_loaded": "Rootine is not loaded right now."
+        }
+      },
+      "description": "The entity `{entity}` no longer exists, was renamed or disabled. Use “Fix” to pick another one, or leave the field empty to unlink it. This notice disappears by itself once the entity is back."
+    },
+    "missing_temperature_entity": {
+      "title": "{plant}: Temperature sensor missing",
+      "fix_flow": {
+        "step": {
+          "relink": {
+            "title": "Choose a new temperature sensor",
+            "description": "Previously: `{entity}`. Leave empty to unlink.",
+            "data": {
+              "entity_id": "New entity"
+            }
+          }
+        },
+        "abort": {
+          "not_loaded": "Rootine is not loaded right now."
+        }
+      },
+      "description": "The entity `{entity}` no longer exists, was renamed or disabled. Use “Fix” to pick another one, or leave the field empty to unlink it. This notice disappears by itself once the entity is back."
+    },
+    "missing_battery_entity": {
+      "title": "{plant}: Battery sensor missing",
+      "fix_flow": {
+        "step": {
+          "relink": {
+            "title": "Choose a new battery sensor",
+            "description": "Previously: `{entity}`. Leave empty to unlink.",
+            "data": {
+              "entity_id": "New entity"
+            }
+          }
+        },
+        "abort": {
+          "not_loaded": "Rootine is not loaded right now."
+        }
+      },
+      "description": "The entity `{entity}` no longer exists, was renamed or disabled. Use “Fix” to pick another one, or leave the field empty to unlink it. This notice disappears by itself once the entity is back."
+    },
+    "missing_valve_entity": {
+      "title": "{plant}: Valve missing",
+      "fix_flow": {
+        "step": {
+          "relink": {
+            "title": "Choose a new valve",
+            "description": "Previously: `{entity}`. Leave empty to unlink.",
+            "data": {
+              "entity_id": "New entity"
+            }
+          }
+        },
+        "abort": {
+          "not_loaded": "Rootine is not loaded right now."
+        }
+      },
+      "description": "The entity `{entity}` no longer exists, was renamed or disabled. Use “Fix” to pick another one, or leave the field empty to unlink it. This notice disappears by itself once the entity is back."
+    },
+    "missing_rain_entity": {
+      "title": "{plant}: Rain sensor missing",
+      "fix_flow": {
+        "step": {
+          "relink": {
+            "title": "Choose a new rain sensor",
+            "description": "Previously: `{entity}`. Leave empty to unlink.",
+            "data": {
+              "entity_id": "New entity"
+            }
+          }
+        },
+        "abort": {
+          "not_loaded": "Rootine is not loaded right now."
+        }
+      },
+      "description": "The entity `{entity}` no longer exists, was renamed or disabled. Use “Fix” to pick another one, or leave the field empty to unlink it. This notice disappears by itself once the entity is back."
+    },
+    "missing_weather_entity": {
+      "title": "{plant}: Weather entity missing",
+      "fix_flow": {
+        "step": {
+          "relink": {
+            "title": "Choose a new weather entity",
+            "description": "Previously: `{entity}`. Leave empty to unlink.",
+            "data": {
+              "entity_id": "New entity"
+            }
+          }
+        },
+        "abort": {
+          "not_loaded": "Rootine is not loaded right now."
+        }
+      },
+      "description": "The entity `{entity}` no longer exists, was renamed or disabled. Use “Fix” to pick another one, or leave the field empty to unlink it. This notice disappears by itself once the entity is back."
+    },
+    "missing_outdoor_temp_entity": {
+      "title": "{plant}: Outdoor temperature sensor missing",
+      "fix_flow": {
+        "step": {
+          "relink": {
+            "title": "Choose a new outdoor temperature sensor",
+            "description": "Previously: `{entity}`. Leave empty to unlink.",
+            "data": {
+              "entity_id": "New entity"
+            }
+          }
+        },
+        "abort": {
+          "not_loaded": "Rootine is not loaded right now."
+        }
+      },
+      "description": "The entity `{entity}` no longer exists, was renamed or disabled. Use “Fix” to pick another one, or leave the field empty to unlink it. This notice disappears by itself once the entity is back."
+    }
   }
 }

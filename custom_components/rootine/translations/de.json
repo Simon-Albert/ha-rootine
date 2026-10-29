@@ -646,5 +646,133 @@
         }
       }
     }
+  },
+  "issues": {
+    "missing_moisture_entity": {
+      "title": "{plant}: Feuchtesensor fehlt",
+      "fix_flow": {
+        "step": {
+          "relink": {
+            "title": "Feuchtesensor neu wählen",
+            "description": "Bisher: `{entity}`. Leer lassen, um die Verknüpfung zu lösen.",
+            "data": {
+              "entity_id": "Neue Entität"
+            }
+          }
+        },
+        "abort": {
+          "not_loaded": "Rootine ist gerade nicht geladen."
+        }
+      },
+      "description": "Die Entität `{entity}` gibt es nicht mehr, sie wurde umbenannt oder deaktiviert. Wähle unter „Beheben“ eine andere aus oder lass das Feld leer, um die Verknüpfung zu lösen. Der Hinweis verschwindet von selbst, sobald die Entität wieder da ist."
+    },
+    "missing_temperature_entity": {
+      "title": "{plant}: Temperatursensor fehlt",
+      "fix_flow": {
+        "step": {
+          "relink": {
+            "title": "Temperatursensor neu wählen",
+            "description": "Bisher: `{entity}`. Leer lassen, um die Verknüpfung zu lösen.",
+            "data": {
+              "entity_id": "Neue Entität"
+            }
+          }
+        },
+        "abort": {
+          "not_loaded": "Rootine ist gerade nicht geladen."
+        }
+      },
+      "description": "Die Entität `{entity}` gibt es nicht mehr, sie wurde umbenannt oder deaktiviert. Wähle unter „Beheben“ eine andere aus oder lass das Feld leer, um die Verknüpfung zu lösen. Der Hinweis verschwindet von selbst, sobald die Entität wieder da ist."
+    },
+    "missing_battery_entity": {
+      "title": "{plant}: Batteriesensor fehlt",
+      "fix_flow": {
+        "step": {
+          "relink": {
+            "title": "Batteriesensor neu wählen",
+            "description": "Bisher: `{entity}`. Leer lassen, um die Verknüpfung zu lösen.",
+            "data": {
+              "entity_id": "Neue Entität"
+            }
+          }
+        },
+        "abort": {
+          "not_loaded": "Rootine ist gerade nicht geladen."
+        }
+      },
+      "description": "Die Entität `{entity}` gibt es nicht mehr, sie wurde umbenannt oder deaktiviert. Wähle unter „Beheben“ eine andere aus oder lass das Feld leer, um die Verknüpfung zu lösen. Der Hinweis verschwindet von selbst, sobald die Entität wieder da ist."
+    },
+    "missing_valve_entity": {
+      "title": "{plant}: Ventil fehlt",
+      "fix_flow": {
+        "step": {
+          "relink": {
+            "title": "Ventil neu wählen",
+            "description": "Bisher: `{entity}`. Leer lassen, um die Verknüpfung zu lösen.",
+            "data": {
+              "entity_id": "Neue Entität"
+            }
+          }
+        },
+        "abort": {
+          "not_loaded": "Rootine ist gerade nicht geladen."
+        }
+      },
+      "description": "Die Entität `{entity}` gibt es nicht mehr, sie wurde umbenannt oder deaktiviert. Wähle unter „Beheben“ eine andere aus oder lass das Feld leer, um die Verknüpfung zu lösen. Der Hinweis verschwindet von selbst, sobald die Entität wieder da ist."
+    },
+    "missing_rain_entity": {
+      "title": "{plant}: Regensensor fehlt",
+      "fix_flow": {
+        "step": {
+          "relink": {
+            "title": "Regensensor neu wählen",
+            "description": "Bisher: `{entity}`. Leer lassen, um die Verknüpfung zu lösen.",
+            "data": {
+              "entity_id": "Neue Entität"
+            }
+          }
+        },
+        "abort": {
+          "not_loaded": "Rootine ist gerade nicht geladen."
+        }
+      },
+      "description": "Die Entität `{entity}` gibt es nicht mehr, sie wurde umbenannt oder deaktiviert. Wähle unter „Beheben“ eine andere aus oder lass das Feld leer, um die Verknüpfung zu lösen. Der Hinweis verschwindet von selbst, sobald die Entität wieder da ist."
+    },
+    "missing_weather_entity": {
+      "title": "{plant}: Wetter-Entität fehlt",
+      "fix_flow": {
+        "step": {
+          "relink": {
+            "title": "Wetter-Entität neu wählen",
+            "description": "Bisher: `{entity}`. Leer lassen, um die Verknüpfung zu lösen.",
+            "data": {
+              "entity_id": "Neue Entität"
+            }
+          }
+        },
+        "abort": {
+          "not_loaded": "Rootine ist gerade nicht geladen."
+        }
+      },
+      "description": "Die Entität `{entity}` gibt es nicht mehr, sie wurde umbenannt oder deaktiviert. Wähle unter „Beheben“ eine andere aus oder lass das Feld leer, um die Verknüpfung zu lösen. Der Hinweis verschwindet von selbst, sobald die Entität wieder da ist."
+    },
+    "missing_outdoor_temp_entity": {
+      "title": "{plant}: Außentemperatursensor fehlt",
+      "fix_flow": {
+        "step": {
+          "relink": {
+            "title": "Außentemperatursensor neu wählen",
+            "description": "Bisher: `{entity}`. Leer lassen, um die Verknüpfung zu lösen.",
+            "data": {
+              "entity_id": "Neue Entität"
+            }
+          }
+        },
+        "abort": {
+          "not_loaded": "Rootine ist gerade nicht geladen."
+        }
+      },
+      "description": "Die Entität `{entity}` gibt es nicht mehr, sie wurde umbenannt oder deaktiviert. Wähle unter „Beheben“ eine andere aus oder lass das Feld leer, um die Verknüpfung zu lösen. Der Hinweis verschwindet von selbst, sobald die Entität wieder da ist."
+    }
   }
 }
