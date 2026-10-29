@@ -1,4 +1,4 @@
-# Muss zur HA-Version passen (Ziel: 2026.10.x). Bei neuer HA-Version anheben.
-pytest-homeassistant-custom-component
+# Pinned to the Home Assistant version Rootine targets (HA 2026.10.4, Python 3.14).
+pytest-homeassistant-custom-component==0.13.375
 pytest-cov
 ruff
