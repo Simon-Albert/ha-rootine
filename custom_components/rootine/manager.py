@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, datetime, timedelta
 from typing import Any
 
@@ -61,9 +61,10 @@ from .const import (
 )
 from .logic import climate, moisture, rain, valve
 from .logic.due import DueResult, DueStatus, TaskConfig, TaskState, compute_due, worst_status
-from .logic.profile import PlantSettings, Profile
+from .logic.profile import PlantSettings, Profile, photo_url
 from .logic.schedule import ScheduleError, TaskKind, WaterMode, parse_schedule
 from .logic.texts import TextItem, item_text, summary_text, task_verb
+from .photo import PhotoUnresolvable, async_photo_url
 from .store import (
     RootineStore,
     profile_from_dict,
@@ -123,6 +124,7 @@ class PlantRuntime:
     forecast_min: float | None = None
     forecast_max: float | None = None
     warnings: dict[str, dict[str, Any]] = field(default_factory=dict)
+    photo_url: str | None = None  # resolved URL of profile.photo (see photo.py)
 
     def task(self, key: str) -> TaskConfig:
         return next(t for t in self.tasks if t.key == key)
@@ -484,8 +486,8 @@ class RootineManager:
         default = plant.moisture_entity is None
         return bool(plant.config.get(CONF_VALVE_COUNTS, default))
 
-    @callback
-    def _midnight(self, _now: datetime) -> None:
+    async def _midnight(self, _now: datetime) -> None:
+        await self.async_refresh_photos()
         self.recompute_all()
 
     async def _hourly(self, _now: datetime) -> None:
@@ -517,9 +519,32 @@ class RootineManager:
         return plant.settings.temp_min is not None or plant.settings.temp_max is not None
 
     async def async_start(self) -> None:
-        """Called once after setup: first forecast, then recompute."""
+        """Called once after setup: photos, first forecast, then recompute."""
+        await self.async_refresh_photos()
         await self._fetch_forecast()
         self.recompute_all()
+
+    async def async_refresh_photos(self) -> None:
+        """Resolve photos again (signed URLs expire); a photo that vanished falls back."""
+        for plant in self.plants.values():
+            plant.photo_url = None
+            if plant.profile.photo:
+                try:
+                    plant.photo_url = await async_photo_url(self.hass, plant.profile.photo)
+                except PhotoUnresolvable:
+                    _LOGGER.warning("Photo of %s can no longer be resolved", plant.name)
+
+    def picture(self, plant: PlantRuntime) -> str | None:
+        """entity_picture: own photo, else OpenPlantbook image, else none."""
+        return plant.photo_url or photo_url(replace(plant.profile, photo=None))
+
+    async def async_set_photo(self, subentry_id: str, media_content_id: str | None) -> None:
+        """Set or remove the own photo; raises PhotoUnresolvable instead of falling back."""
+        plant = self.plants[subentry_id]
+        url = await async_photo_url(self.hass, media_content_id) if media_content_id else None
+        plant.profile.photo = media_content_id
+        plant.photo_url = url
+        self._notify(plant)
 
     # --- recomputation -----------------------------------------------------------------
 

@@ -316,7 +316,8 @@
         "overlap": "Zeile {line} überschneidet sich mit Zeile {other}.",
         "sensor_mode_needs_sensor": "Der Modus „Sensor“ braucht einen Feuchtesensor.",
         "threshold_required": "Bitte eine Gieß-Schwelle angeben.",
-        "task_exists": "Diese Aufgabe gibt es schon."
+        "task_exists": "Diese Aufgabe gibt es schon.",
+        "photo_unresolvable": "Dieses Bild lässt sich nicht anzeigen. Bitte ein Foto hochladen oder ein Bild aus den Medien wählen."
       },
       "abort": {
         "reconfigure_successful": "Gespeichert.",
@@ -467,6 +468,9 @@
     },
     "no_openplantbook": {
       "message": "OpenPlantbook ist nicht verfügbar."
+    },
+    "photo_unresolvable": {
+      "message": "Dieses Bild lässt sich nicht anzeigen. Bitte ein Foto hochladen oder ein Bild aus den Medien wählen."
     }
   },
   "services": {

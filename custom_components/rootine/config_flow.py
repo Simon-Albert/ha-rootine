@@ -60,6 +60,7 @@ from .logic.profile import (
 )
 from .logic.schedule import ScheduleError, TaskKind, WaterMode, format_schedule, parse_schedule
 from .manager import RootineManager
+from .photo import PhotoUnresolvable, async_photo_url
 from .store import profile_to_dict
 
 _MULTILINE = selector.TextSelector(selector.TextSelectorConfig(multiline=True))
@@ -71,7 +72,8 @@ _LOCATION = selector.SelectSelector(
         mode=selector.SelectSelectorMode.DROPDOWN,
     )
 )
-_PHOTO = selector.MediaSelector(selector.MediaSelectorConfig(accept=["image/*"]))
+# image_upload lets the user take or pick a photo directly in the form (HA 2026.10+)
+_PHOTO = selector.MediaSelector(selector.MediaSelectorConfig(accept=["image/*"], image_upload=True))
 _METHOD = selector.SelectSelector(
     selector.SelectSelectorConfig(
         options=["median_24h", "max_24h", "raw"],
@@ -320,21 +322,33 @@ class PlantSubentryFlow(ConfigSubentryFlow):
     async def async_step_profile(
         self, user_input: dict[str, Any] | None = None
     ) -> SubentryFlowResult:
+        errors: dict[str, str] = {}
         if user_input is not None:
             profile = from_form(_form_to_fields(user_input), self._prefilled)
             profile.opb_pid = self._profile.opb_pid
             profile.opb_image_url = self._profile.opb_image_url
-            photo = user_input.get("photo")
-            profile.photo = photo["media_content_id"] if photo else None
-            self._profile = profile
-            return await self.async_step_sensors()
+            photo = _media_id(user_input.get("photo"))
+            if photo and not await self._photo_ok(photo):
+                errors["photo"] = "photo_unresolvable"
+            else:
+                profile.photo = photo
+                self._profile = profile
+                return await self.async_step_sensors()
         values = {f: get_field(self._profile, f) for f in PROFILE_FORM_FIELDS.values()}
         schema = _profile_schema(values).extend({vol.Optional("photo"): _PHOTO})
         return self.async_show_form(
             step_id="profile",
             data_schema=schema,
+            errors=errors,
             description_placeholders={"image": _image_hint(self._profile)},
         )
+
+    async def _photo_ok(self, media_content_id: str) -> bool:
+        try:
+            await async_photo_url(self.hass, media_content_id)
+        except PhotoUnresolvable:
+            return False
+        return True
 
     async def async_step_sensors(
         self, user_input: dict[str, Any] | None = None
@@ -541,12 +555,16 @@ class PlantSubentryFlow(ConfigSubentryFlow):
         plant = self._plant()
         if plant is None:
             return self.async_abort(reason="not_loaded")
+        errors: dict[str, str] = {}
         if user_input is not None:
-            photo = user_input.get("photo")
-            profile = update_fields(plant.profile, {})
-            profile.photo = photo["media_content_id"] if photo else None
-            self._manager().set_profile(plant.subentry_id, profile)
-            return self.async_abort(reason="reconfigure_successful")
+            try:
+                await self._manager().async_set_photo(
+                    plant.subentry_id, _media_id(user_input.get("photo"))
+                )
+            except PhotoUnresolvable:
+                errors["photo"] = "photo_unresolvable"
+            else:
+                return self.async_abort(reason="reconfigure_successful")
         current = (
             {"media_content_id": plant.profile.photo, "media_content_type": "image/jpeg"}
             if plant.profile.photo
@@ -557,6 +575,7 @@ class PlantSubentryFlow(ConfigSubentryFlow):
             data_schema=vol.Schema(
                 {vol.Optional("photo", description={"suggested_value": current}): _PHOTO}
             ),
+            errors=errors,
         )
 
     # OpenPlantbook link management (store-only, never reloads)
@@ -902,6 +921,13 @@ _SENSOR_KEYS = (
     CONF_BATTERY_ENTITY,
     CONF_VALVE_ENTITY,
 )
+
+
+def _media_id(value: Any) -> str | None:
+    """media_content_id from the media selector (or a plain string)."""
+    if isinstance(value, dict):
+        return value.get("media_content_id") or None
+    return value or None
 
 
 def _image_hint(profile: Profile) -> str:

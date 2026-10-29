@@ -316,7 +316,8 @@
         "overlap": "Line {line} overlaps line {other}.",
         "sensor_mode_needs_sensor": "Mode “sensor” needs a moisture sensor.",
         "threshold_required": "Please enter a watering threshold.",
-        "task_exists": "This task already exists."
+        "task_exists": "This task already exists.",
+        "photo_unresolvable": "This image cannot be shown. Please upload a photo or pick an image from the media library."
       },
       "abort": {
         "reconfigure_successful": "Saved.",
@@ -467,6 +468,9 @@
     },
     "no_openplantbook": {
       "message": "OpenPlantbook is not available."
+    },
+    "photo_unresolvable": {
+      "message": "This image cannot be shown. Please upload a photo or pick an image from the media library."
     }
   },
   "services": {

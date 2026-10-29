@@ -8,6 +8,20 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import pytest
+import voluptuous as vol
+from homeassistant.helpers import selector as _selector
+
+# The target is HA 2026.10, whose media selector knows "image_upload". Older HA versions in a local
+# development sandbox reject the key; accept it there so the same code can be tested.
+if "image_upload" not in _selector.MediaSelectorConfig.__annotations__:
+    _original_schema = _selector.MediaSelector.CONFIG_SCHEMA
+
+    def _media_config_schema(config):
+        config = dict(config)
+        image_upload = vol.Schema(bool)(config.pop("image_upload", False))
+        return {**_original_schema(config), "image_upload": image_upload}
+
+    _selector.MediaSelector.CONFIG_SCHEMA = staticmethod(_media_config_schema)
 
 FIXTURES = Path(__file__).parent / "fixtures"  # anonymized real data, local only
 SYNTHETIC = Path(__file__).parent / "fixtures_synthetic"  # generated, committed

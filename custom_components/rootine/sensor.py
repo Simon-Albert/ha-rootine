@@ -13,7 +13,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .entity import RootineHubEntity, RootinePlantEntity, RootineTaskEntity
 from .logic.due import DueStatus
-from .logic.profile import get_field, photo_url
+from .logic.profile import get_field
 from .manager import RootineManager
 
 STATUS_OPTIONS = [s.value for s in DueStatus]
@@ -63,7 +63,7 @@ class CareStatusSensor(RootinePlantEntity, SensorEntity):
 
     @property
     def entity_picture(self) -> str | None:
-        return photo_url(self.plant.profile)
+        return self.manager.picture(self.plant)
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

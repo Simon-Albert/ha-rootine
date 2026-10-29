@@ -19,6 +19,7 @@ from . import openplantbook
 from .const import DOMAIN, SOURCE_SERVICE
 from .logic.profile import apply_opb, parse_opb, update_fields
 from .manager import PlantRuntime, RootineManager
+from .photo import PhotoUnresolvable
 
 PROFILE_FIELDS = {
     "common_name": "common_name",
@@ -104,6 +105,13 @@ def _photo_id(value: Any) -> str | None:
     return value or None
 
 
+async def _set_photo(manager: RootineManager, plant: PlantRuntime, value: Any) -> None:
+    try:
+        await manager.async_set_photo(plant.subentry_id, _photo_id(value))
+    except PhotoUnresolvable as err:
+        raise _fail("photo_unresolvable") from err
+
+
 def async_register_services(hass: HomeAssistant) -> None:
     async def mark_done(call: ServiceCall) -> None:
         manager, plant = _resolve(hass, call.data["entity_id"])
@@ -150,16 +158,13 @@ def async_register_services(hass: HomeAssistant) -> None:
         changes = {
             PROFILE_FIELDS[name]: call.data[name] for name in PROFILE_FIELDS if name in call.data
         }
-        profile = update_fields(plant.profile, changes)
         if "photo" in call.data:
-            profile.photo = _photo_id(call.data["photo"])
-        manager.set_profile(plant.subentry_id, profile)
+            await _set_photo(manager, plant, call.data["photo"])
+        manager.set_profile(plant.subentry_id, update_fields(plant.profile, changes))
 
     async def set_photo(call: ServiceCall) -> None:
         manager, plant = _resolve(hass, call.data["entity_id"])
-        profile = update_fields(plant.profile, {})
-        profile.photo = _photo_id(call.data.get("photo"))
-        manager.set_profile(plant.subentry_id, profile)
+        await _set_photo(manager, plant, call.data.get("photo"))
 
     async def get_history(call: ServiceCall) -> ServiceResponse:
         manager, plant = _resolve(hass, call.data["entity_id"])
