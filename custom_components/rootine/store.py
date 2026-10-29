@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
-from .const import STORE_KEY, STORE_VERSION
+from .const import STORE_KEY, STORE_MINOR_VERSION, STORE_VERSION
 from .logic.due import TaskState
 from .logic.profile import PlantSettings, Profile
 
@@ -84,6 +84,7 @@ def settings_to_dict(settings: PlantSettings) -> dict[str, Any]:
         "temp_min": settings.temp_min,
         "temp_max": settings.temp_max,
         "rain_threshold": settings.rain_threshold,
+        "limit_memory": dict(settings.limit_memory),
     }
 
 
@@ -96,14 +97,35 @@ def settings_from_dict(data: dict[str, Any]) -> PlantSettings:
         temp_min=data.get("temp_min"),
         temp_max=data.get("temp_max"),
         rain_threshold=data.get("rain_threshold"),
+        limit_memory=dict(data.get("limit_memory", {})),
     )
 
 
+def migrate(old_major: int, old_minor: int, data: dict[str, Any]) -> dict[str, Any]:
+    """Bring stored data from an older minor version to the current format."""
+    if old_major == 1 and old_minor < 2:
+        for plant in data.get("plants", {}).values():
+            for state in plant.get("tasks", {}).values():
+                state.setdefault("latched_since", None)  # set at the next start if latched
+            plant.setdefault("oneoffs", [])
+            plant.setdefault("settings", {}).setdefault("limit_memory", {})
+    return data
+
+
+class _VersionedStore(Store[dict[str, Any]]):
+    async def _async_migrate_func(
+        self, old_major_version: int, old_minor_version: int, old_data: dict[str, Any]
+    ) -> dict[str, Any]:
+        return migrate(old_major_version, old_minor_version, old_data)
+
+
 class RootineStore:
-    """Dünne Hülle um helpers.storage.Store."""
+    """Thin wrapper around helpers.storage.Store."""
 
     def __init__(self, hass: HomeAssistant) -> None:
-        self._store: Store[dict[str, Any]] = Store(hass, STORE_VERSION, STORE_KEY)
+        self._store = _VersionedStore(
+            hass, STORE_VERSION, STORE_KEY, minor_version=STORE_MINOR_VERSION
+        )
 
     async def async_load(self) -> dict[str, Any]:
         data = await self._store.async_load() or {}

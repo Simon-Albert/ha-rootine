@@ -36,6 +36,8 @@ class PlantSettings:
     temp_min: float | None = None
     temp_max: float | None = None
     rain_threshold: float | None = None
+    # last value of a limit that was switched off, restored when it is switched on again
+    limit_memory: dict[str, float] = field(default_factory=dict)
 
 
 def get_field(profile: Profile, name: str) -> str | None:

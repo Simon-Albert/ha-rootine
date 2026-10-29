@@ -107,6 +107,7 @@ class PlantRuntime:
     settings: PlantSettings
     states: dict[str, TaskState]
     log: list[dict[str, Any]] = field(default_factory=list)
+    oneoffs: list[dict[str, Any]] = field(default_factory=list)  # one-time tasks, see oneoff.py
     results: dict[str, DueResult] = field(default_factory=dict)
     # sensor tracking
     samples: list[tuple[datetime, float]] = field(default_factory=list)
@@ -246,6 +247,7 @@ class RootineManager:
                 settings=settings_from_dict(saved.get("settings", {})),
                 states=states,
                 log=list(saved.get("log", [])),
+                oneoffs=list(saved.get("oneoffs", [])),
             )
             self._restore_sensor_state(plant, saved)
             for state in plant.states.values():
@@ -377,6 +379,7 @@ class RootineManager:
                 "profile": profile_to_dict(plant.profile),
                 "settings": settings_to_dict(plant.settings),
                 "log": plant.log,
+                "oneoffs": plant.oneoffs,
                 "moisture_samples": [[t.isoformat(), v] for t, v in plant.samples],
                 "anomaly": plant.anomaly,
                 "last_event": plant.last_event.isoformat() if plant.last_event else None,

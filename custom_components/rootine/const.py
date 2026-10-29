@@ -61,6 +61,8 @@ SOURCE_RAIN = "rain"
 
 STORE_KEY = DOMAIN
 STORE_VERSION = 1
+# 2: latched_since, one-time tasks (oneoffs), limit_memory (v1.2.0)
+STORE_MINOR_VERSION = 2
 STORE_SAVE_DELAY = 10
 LOG_LIMIT = 200
 
