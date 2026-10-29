@@ -622,7 +622,7 @@ class RootineManager:
                     task.kind == TaskKind.WATER
                     and task.mode == WaterMode.SENSOR
                     and newest is not None
-                    and newest > state.last_done
+                    and dt_util.as_utc(newest) > dt_util.as_utc(state.last_done)
                 ):
                     state.sensor_due_latched = True
 
@@ -741,9 +741,9 @@ class RootineManager:
         # Drop the oldest entries but always keep the newest valid entry of every task.
         keep: set[str] = set()
         for task in plant.tasks:
-            valid = [e for e in plant.log if e["task"] == task.key and not e["undone"]]
-            if valid:
-                keep.add(max(valid, key=lambda e: e["ts"])["id"])
+            latest = _newest_valid(plant.log, task.key)
+            if latest is not None:
+                keep.add(latest["id"])
         excess = len(plant.log) - LOG_LIMIT
         trimmed = []
         for item in plant.log:
@@ -762,15 +762,14 @@ class RootineManager:
         when: datetime | None = None,
         note: str | None = None,
     ) -> None:
-        """Set a task done without notifying (callers notify)."""
+        """Record a task as done without notifying (callers notify).
+
+        The history is the source of truth: last_done is the newest valid entry, so a
+        backfilled entry in the past never moves last_done back.
+        """
         when = dt_util.as_local(when) if when else dt_util.now()
-        state = plant.states[task_key]
-        state.last_done = when
-        state.last_source = source
-        state.postponed_days = 0
-        state.sensor_due_latched = False
-        state.rain_at_done = self.rain_days.get(when.date().isoformat(), 0.0)
         self._append_log(plant, self._log_entry(task_key, source, note, when))
+        self._sync_last_done(plant, task_key)
         self.hass.bus.async_fire(
             EVENT_TASK_DONE,
             {
@@ -781,6 +780,23 @@ class RootineManager:
                 "when": when.isoformat(),
             },
         )
+
+    def _sync_last_done(self, plant: PlantRuntime, task_key: str) -> None:
+        """Make the task state follow the newest valid history entry of the task."""
+        latest = _newest_valid(plant.log, task_key)
+        state = plant.states.get(task_key)
+        if latest is None or state is None:
+            return
+        when = _entry_time(latest)
+        same = dt_util.as_utc(when) == dt_util.as_utc(state.last_done)
+        if same and latest["source"] == state.last_source:
+            return
+        state.last_done = when
+        state.last_source = latest["source"]
+        state.postponed_days = 0
+        state.sensor_due_latched = False
+        state.latched_since = None
+        state.rain_at_done = self.rain_days.get(when.date().isoformat(), 0.0)
 
     @callback
     def mark_done(
@@ -800,6 +816,11 @@ class RootineManager:
         """Correction through the date entity (time 12:00 keeps the date stable)."""
         plant = self.plants[subentry_id]
         when = dt_util.start_of_local_day(day).replace(hour=12)
+        # an explicit correction: entries after the corrected date no longer count
+        for item in plant.log:
+            later = _entry_instant(item) > dt_util.as_utc(when)
+            if item["task"] == task_key and not item["undone"] and later:
+                item["undone"] = True
         self._apply_done(plant, task_key, SOURCE_DATE_EDIT, when=when)
         self._notify(plant)
 
@@ -817,14 +838,7 @@ class RootineManager:
         if entry is None:
             return False
         entry["undone"] = True
-        task_key = entry["task"]
-        if task_key in plant.states:
-            valid = [e for e in plant.log if e["task"] == task_key and not e["undone"]]
-            if valid:
-                latest = max(valid, key=lambda e: e["ts"])
-                state = plant.states[task_key]
-                state.last_done = dt_util.as_local(dt_util.parse_datetime(latest["ts"]))
-                state.last_source = latest["source"]
+        self._sync_last_done(plant, entry["task"])
         self._notify(plant)
         return True
 
@@ -1044,7 +1058,24 @@ class RootineManager:
         return entries
 
     def history(self, subentry_id: str, limit: int = 50) -> list[dict[str, Any]]:
-        return list(reversed(self.plants[subentry_id].log[-limit:]))
+        """Newest first, ordered by time (not by when an entry was added)."""
+        ordered = sorted(self.plants[subentry_id].log, key=_entry_instant, reverse=True)
+        return ordered[:limit]
+
+
+def _entry_time(entry: dict[str, Any]) -> datetime:
+    return dt_util.as_local(dt_util.parse_datetime(entry["ts"]))
+
+
+def _entry_instant(entry: dict[str, Any]) -> datetime:
+    """Order key in UTC: datetimes sharing a zone compare by wall time, which is
+    ambiguous in the repeated hour when daylight saving time ends."""
+    return dt_util.as_utc(dt_util.parse_datetime(entry["ts"]))
+
+
+def _newest_valid(log: list[dict[str, Any]], task_key: str) -> dict[str, Any] | None:
+    valid = [e for e in log if e["task"] == task_key and not e["undone"]]
+    return max(valid, key=_entry_instant) if valid else None
 
 
 def _public(item: dict[str, Any]) -> dict[str, Any]:

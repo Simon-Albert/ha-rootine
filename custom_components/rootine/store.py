@@ -21,6 +21,7 @@ def state_to_dict(state: TaskState) -> dict[str, Any]:
         "postponed_days": state.postponed_days,
         "sensor_due_latched": state.sensor_due_latched,
         "rain_at_done": state.rain_at_done,
+        "latched_since": state.latched_since.isoformat() if state.latched_since else None,
     }
 
 
@@ -32,7 +33,13 @@ def state_from_dict(data: dict[str, Any]) -> TaskState:
         postponed_days=data.get("postponed_days", 0),
         sensor_due_latched=data.get("sensor_due_latched", False),
         rain_at_done=data.get("rain_at_done"),
+        latched_since=_parse(data.get("latched_since")),
     )
+
+
+def _parse(value: str | None):
+    parsed = dt_util.parse_datetime(value) if value else None
+    return dt_util.as_local(parsed) if parsed else None
 
 
 def profile_to_dict(profile: Profile) -> dict[str, Any]:

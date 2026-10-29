@@ -75,6 +75,7 @@ class TaskState:
     postponed_days: int = 0
     sensor_due_latched: bool = False
     rain_at_done: float | None = None
+    latched_since: datetime | None = None  # when the sensor latch was set (plan 7.3)
 
 
 @dataclass(frozen=True)
