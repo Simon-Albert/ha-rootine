@@ -68,6 +68,13 @@ const states = {
     out.dialog = card.shadowRoot.querySelector(".dialog")?.textContent;
     out.hasChart = !!card.shadowRoot.querySelector("svg.chart path");
     out.xss = !!card.shadowRoot.querySelector("script");
+    // editing: background reloads must not wipe what the user typed
+    card.shadowRoot.querySelector("[data-edit]").click();
+    card.shadowRoot.querySelector("input[name='pot']").value = "Terrakotta 30 cm";
+    await card._loadHistory();
+    card.hass = { ...hass, states: { ...hass.states } };
+    out.typedKept = card.shadowRoot.querySelector("input[name='pot']")?.value;
+    card.shadowRoot.querySelector("[data-cancel]").click();
     card.shadowRoot.querySelector("[data-postpone]").click();
     window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
     out.closedByEscape = !card.shadowRoot.querySelector(".dialog");
@@ -112,6 +119,7 @@ const states = {
   if (!result.calls.find((c) => c[1] === "postpone")) fail("postpone not called");
   if (!/Kaffee/.test(result.single)) fail("single card");
   if (result.doneFeedback !== "✓") fail("no feedback after pressing done");
+  if (result.typedKept !== "Terrakotta 30 cm") fail(`edit form re-rendered, input lost (${result.typedKept})`);
   if (!result.closedByEscape) fail("escape does not close the dialog");
   if (!/Satsuma-Mandarine/.test(result.sibling)) fail("sibling entity not resolved");
   if (result.toast !== "kaputt" || !result.buttonReenabled) fail("errors are not shown");

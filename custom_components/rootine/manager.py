@@ -43,6 +43,7 @@ from .const import (
     LOG_LIMIT,
     SOURCE_DATE_EDIT,
     SOURCE_RAIN,
+    SOURCE_SENSOR,
     SOURCE_SETUP,
     SOURCE_VALVE,
     STORE_SAVE_DELAY,
@@ -464,7 +465,22 @@ class RootineManager:
             valve_match=valve.valve_matches(events, ts),
             rain_today_and_yesterday=rain.recent_rain(self.rain_days, ts.date()),
         )
+        # the valve run that caused this jump may already be recorded: one watering, one entry
+        if source == SOURCE_VALVE and self._recent_water_entry(
+            plant, ts - valve.LEAD, ts + valve.LAG, sources=(SOURCE_VALVE,)
+        ):
+            return
         self._apply_done(plant, TASK_WATER, source, when=ts)
+
+    def _recent_water_entry(
+        self, plant: PlantRuntime, start: datetime, end: datetime, *, sources: tuple[str, ...]
+    ) -> dict[str, Any] | None:
+        for item in reversed(plant.log):
+            if item["task"] != TASK_WATER or item["undone"] or item["source"] not in sources:
+                continue
+            if dt_util.as_utc(start) <= _entry_instant(item) <= dt_util.as_utc(end):
+                return item
+        return None
 
     @callback
     def _on_valve(self, plant: PlantRuntime, new: State | None) -> None:
@@ -482,7 +498,16 @@ class RootineManager:
         # a new event starts exactly now; a run within 10 min of the last one merges into it
         starts_new_event = new.state == "on" and bool(events) and events[-1].start == ts
         if starts_new_event and self._valve_counts(plant) and plant.has_task(TASK_WATER):
-            self._apply_done(plant, TASK_WATER, SOURCE_VALVE, when=ts)
+            # a moisture jump reported just before the valve (reverse Zigbee order) is the
+            # same watering: reclassify it instead of adding a second entry
+            earlier = self._recent_water_entry(
+                plant, ts - valve.LAG, ts, sources=(SOURCE_SENSOR, SOURCE_RAIN, SOURCE_VALVE)
+            )
+            if earlier is None:
+                self._apply_done(plant, TASK_WATER, SOURCE_VALVE, when=ts)
+            elif earlier["source"] != SOURCE_VALVE:
+                earlier["source"] = SOURCE_VALVE
+                self._sync_last_done(plant, TASK_WATER)
         self._notify(plant)
 
     def _valve_counts(self, plant: PlantRuntime) -> bool:

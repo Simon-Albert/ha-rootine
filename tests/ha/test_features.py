@@ -923,3 +923,50 @@ async def test_sensor_latch_turns_overdue_from_the_next_day(hass, freezer):
     async_fire_time_changed(hass, dt_util.now())
     await hass.async_block_till_done()
     assert hass.states.get("sensor.nektarine_watering").attributes["days"] == -2
+
+
+async def _valve_and_sensor_plant(hass):
+    hass.states.async_set("sensor.nek", "30")
+    hass.states.async_set("switch.valve", "off")
+    entry = await setup_main(hass)
+    sid = await add_plant(
+        hass,
+        entry,
+        "Nektarine",
+        location="outdoor",
+        mode="sensor",
+        water="",
+        fertilize="",
+        sensors={"moisture_entity": "sensor.nek", "valve_entity": "switch.valve"},
+        water_extra={"moisture_threshold": 50, "valve_counts_as_watering": True},
+    )
+    return entry, sid
+
+
+def _water_log(entry, sid):
+    log = entry.runtime_data.plants[sid].log
+    return [e["source"] for e in log if e["task"] == "water" and e["source"] != "setup"]
+
+
+async def test_valve_then_sensor_jump_is_one_entry(hass, freezer):
+    entry, sid = await _valve_and_sensor_plant(hass)
+    freezer.tick(timedelta(hours=1))
+    hass.states.async_set("switch.valve", "on")
+    await hass.async_block_till_done()
+    freezer.tick(timedelta(seconds=20))
+    hass.states.async_set("switch.valve", "off")
+    hass.states.async_set("sensor.nek", "75")  # the jump caused by that run
+    await hass.async_block_till_done()
+    assert _water_log(entry, sid) == ["valve"]
+
+
+async def test_sensor_jump_then_late_valve_report_is_one_entry(hass, freezer):
+    entry, sid = await _valve_and_sensor_plant(hass)
+    freezer.tick(timedelta(hours=1))
+    hass.states.async_set("sensor.nek", "75")
+    await hass.async_block_till_done()
+    freezer.tick(timedelta(minutes=2))  # Zigbee reports arriving in reverse order
+    hass.states.async_set("switch.valve", "on")
+    await hass.async_block_till_done()
+    assert _water_log(entry, sid) == ["valve"]  # reclassified, not duplicated
+    assert hass.states.get("sensor.nektarine_watering").attributes["last_source"] == "valve"

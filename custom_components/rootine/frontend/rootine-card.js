@@ -226,6 +226,12 @@ class RootineCard extends HTMLElement {
   _render() {
     const t = this._t;
     if (!this._config) return;
+    // never redraw over an open edit form: it would discard what the user is typing
+    if (this._dialog?.edit && this.shadowRoot.querySelector("[data-form]")) {
+      this._pendingRender = true;
+      return;
+    }
+    this._pendingRender = false;
     const overview = this._config.mode === "overview";
     let plants = this._plants();
     if (overview && this._filter === "needs") plants = plants.filter((p) => !["ok", "rest", "unknown"].includes(p.state));
@@ -417,6 +423,7 @@ class RootineCard extends HTMLElement {
     q("[data-overlay]")?.addEventListener("click", (e) => { if (e.target.dataset.overlay !== undefined) this._close(); });
     q("[data-edit]")?.addEventListener("click", () => { d.edit = !d.edit; this._render(); });
     q("[data-cancel]")?.addEventListener("click", () => { d.edit = false; this._render(); });
+    q("[data-edit]")?.setAttribute("aria-pressed", d.edit ? "true" : "false");
     q("[data-form]")?.addEventListener("submit", async (e) => {
       e.preventDefault();
       const current = this._hass.states[d.id].attributes.profile;
