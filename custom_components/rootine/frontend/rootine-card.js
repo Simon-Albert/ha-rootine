@@ -150,14 +150,55 @@ button:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 
 .actions { display: flex; gap: 6px; justify-content: flex-end; }
 .muted { color: var(--secondary-text-color); }
 svg.chart { width: 100%; height: 130px; display: block; }
-.legend { display: flex; gap: 12px; font-size: .8em; color: var(--secondary-text-color); }
-.overlay { position: fixed; inset: 0; z-index: 9; background: rgba(0,0,0,.5); display: flex;
-  align-items: center; justify-content: center; padding: 12px; }
-.dialog { width: min(720px, 100%); max-height: 92vh; overflow: auto; border-radius: 18px; padding: 16px;
+.legend { margin-top: 6px; display: flex; gap: 12px; font-size: .8em; color: var(--secondary-text-color); }
+.overlay { position: fixed; inset: 0; z-index: 9; background: rgba(0,0,0,.55); backdrop-filter: blur(4px); display: flex;
+  align-items: center; justify-content: center; padding: 12px; animation: fade .18s ease; }
+.dialog { --accent: var(--primary-color); width: min(760px, 100%); max-height: 92vh; overflow: auto; border-radius: 24px; padding: 0;
   background: var(--ha-card-background, var(--card-background-color)); color: var(--primary-text-color);
-  backdrop-filter: blur(16px); display: flex; flex-direction: column; gap: 10px; }
-.dialog h3 { margin: 4px 0; }
-.kv { display: grid; grid-template-columns: 9em 1fr; gap: 2px 10px; font-size: .92em; }
+  backdrop-filter: blur(16px); display: flex; flex-direction: column; gap: 0; box-shadow: 0 24px 60px rgba(0,0,0,.45);
+  animation: rise .22s ease; }
+@keyframes fade { from { opacity: 0; } }
+@keyframes rise { from { opacity: 0; transform: translateY(14px) scale(.98); } }
+.dialog h3 { margin: 0 0 8px; font-size: .78em; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--secondary-text-color); }
+.hero { position: relative; display: flex; gap: 16px; align-items: center; padding: 22px 20px 18px; overflow: hidden; }
+.hero::before { content: ""; position: absolute; inset: 0; background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 38%, transparent), transparent 70%); }
+.hero .bg { position: absolute; inset: -20px; background-size: cover; background-position: center; filter: blur(28px) saturate(1.3); opacity: .35; }
+.hero > * { position: relative; }
+.hero .pic { width: 96px; height: 96px; border-radius: 22px; font-size: 44px; box-shadow: 0 8px 24px rgba(0,0,0,.35); border: 2px solid color-mix(in srgb, var(--accent) 60%, transparent); }
+.hero .title .name { font-size: 1.6em; white-space: normal; letter-spacing: -.01em; }
+.hero .title .sub { font-size: .95em; margin: 2px 0 8px; }
+.hero .chip { font-size: .85em; padding: 3px 12px; }
+.hero .x { position: absolute; top: 12px; right: 12px; width: 34px; height: 34px; padding: 0; border-radius: 50%; font-size: 1.2em; line-height: 1;
+  background: color-mix(in srgb, var(--primary-text-color) 12%, transparent); border-color: transparent; }
+.body { display: flex; flex-direction: column; gap: 14px; padding: 6px 20px 20px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.tile { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 14px; border: 1px solid transparent;
+  background: color-mix(in srgb, var(--primary-text-color) 6%, transparent); }
+.tile .k { font-size: .78em; color: var(--secondary-text-color); display: flex; align-items: center; gap: 6px; }
+.tile .v { font-size: 1.15em; font-weight: 600; }
+.tile .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.toolbar button, .toolbar select { border-radius: 999px; padding: 6px 14px; }
+.toolbar select { width: auto; flex: none; min-width: 0; }
+.sec { padding: 14px 16px; border-radius: 16px; background: color-mix(in srgb, var(--primary-text-color) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary-text-color) 8%, transparent); }
+.care { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+.care > div { padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--primary-text-color) 5%, transparent); font-size: .92em; }
+.care .k { font-size: .75em; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+.care p { margin: 0; } .care ul { margin: 0; padding-left: 1.1em; }
+.timeline { display: flex; flex-direction: column; font-size: .9em; max-height: 220px; overflow: auto; }
+.timeline > div { position: relative; display: flex; gap: 10px; align-items: center; padding: 6px 0 6px 18px; }
+.timeline > div::before { content: ""; position: absolute; left: 3px; top: 0; bottom: 0; width: 2px; background: color-mix(in srgb, var(--primary-text-color) 12%, transparent); }
+.timeline > div::after { content: ""; position: absolute; left: 0; top: 50%; width: 8px; height: 8px; margin-top: -4px; border-radius: 50%; background: var(--accent); }
+.timeline .u { text-decoration: line-through; opacity: .55; }
+.timeline .t { flex: 1; } .timeline .t b { font-weight: 600; }
+@media (max-width: 560px) {
+  .overlay { align-items: flex-end; padding: 0; }
+  .dialog { width: 100%; max-height: 94vh; border-radius: 24px 24px 0 0; }
+  .hero { padding: 18px 16px 14px; } .hero .pic { width: 72px; height: 72px; } .hero .title .name { font-size: 1.35em; }
+  .body { padding: 4px 14px 18px; }
+}
+.kv { display: grid; grid-template-columns: 12em 1fr; margin: 0; gap: 2px 10px; font-size: .92em; }
 .kv dt { color: var(--secondary-text-color); } .kv dd { margin: 0; }
 form.edit { display: grid; grid-template-columns: 9em 1fr; gap: 6px 10px; align-items: start; }
 form.edit input, form.edit textarea, .row input, .row select { width: 100%; box-sizing: border-box; padding: 4px 8px;
@@ -486,7 +527,7 @@ class RootineCard extends HTMLElement {
       return `<text x="${x(dt)}" y="${H - 4}" text-anchor="${h === 0 ? "start" : h === 48 ? "end" : "middle"}" font-size="9" fill="currentColor" opacity=".7">${dt.toLocaleTimeString(lang, { hour: "2-digit", minute: "2-digit" })}</text>`;
     }).join("");
     const thr = chart.threshold != null ? `<line x1="${L}" x2="${W - R}" y1="${y(chart.threshold)}" y2="${y(chart.threshold)}" stroke="#ef4444" stroke-dasharray="3 3"/>` : "";
-    return `<div class="muted">${t.chart}</div><svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" data-chart>${grid}${ticks}${thr}
+    return `<h3>${t.chart}</h3><svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" data-chart>${grid}${ticks}${thr}
       ${line(raw, "var(--secondary-text-color)", true)}${line(ev, "var(--primary-color)", false)}</svg>
       <div class="legend"><span>┄ ${t.raw}</span><span>━ ${t.eval}</span>${chart.threshold != null ? `<span style="color:#ef4444">┄ ${t.threshold} ${chart.threshold} %</span>` : ""}</div>`;
   }
@@ -496,28 +537,38 @@ class RootineCard extends HTMLElement {
     if (!st) return "";
     const a = st.attributes, p = a.profile;
     const name = a.friendly_name?.replace(/ (Pflegestatus|Care status)$/i, "") || d.id;
-    const pic = a.entity_picture ? `<img class="pic" style="width:72px;height:72px" src="${esc(a.entity_picture)}" alt="">` : `<div class="pic" style="width:72px;height:72px">🌱</div>`;
+    const accent = COLORS[st.state] || COLORS.unknown;
+    const pic = a.entity_picture ? `<img class="pic" src="${esc(a.entity_picture)}" alt="">` : `<div class="pic">🌱</div>`;
+    const bg = a.entity_picture ? `<div class="bg" style="background-image:url('${esc(a.entity_picture)}')"></div>` : "";
     const taskOptions = this._items(a).map((i) => `<option value="${esc(i.key)}">${esc(i.name)}</option>`).join("");
+    const tiles = this._items(a).map((i) => `<div class="tile"><div class="k"><span class="dot" style="background:${COLORS[i.status] || COLORS.unknown}"></span>${esc(i.name)}</div>
+      <div class="v">${esc(this._when(i) || t.status[i.status] || "")}</div></div>`).join("");
     const kv = (label, value, isMd) => value ? `<dt>${esc(label)}</dt><dd>${isMd ? markdown(value) : esc(value)}</dd>` : "";
-    const view = `<dl class="kv">${PROFILE_FIELDS.map((f) => kv(t.fields[f], f.startsWith("care.") ? p[f] : p[f] ?? "", f.startsWith("care.") || f === "notes")).join("")}</dl>`;
-    const form = `<form class="edit" data-form>${PROFILE_FIELDS.map((f) => {
+    const careFields = PROFILE_FIELDS.filter((f) => f.startsWith("care.") || f === "notes");
+    const plainFields = PROFILE_FIELDS.filter((f) => !careFields.includes(f));
+    const facts = plainFields.map((f) => kv(t.fields[f], p[f] ?? "", false)).join("");
+    const care = careFields.filter((f) => p[f]).map((f) => `<div><div class="k">${esc(t.fields[f])}</div>${markdown(p[f])}</div>`).join("");
+    const view = `${facts ? `<div class="sec"><h3>${t.edit === "Bearbeiten" ? "Steckbrief" : "Profile"}</h3><dl class="kv">${facts}</dl></div>` : ""}${care ? `<div class="care">${care}</div>` : ""}`;
+    const form = `<form class="edit sec" data-form>${PROFILE_FIELDS.map((f) => {
       const multi = f.startsWith("care.") || f === "notes";
       return `<label>${esc(t.fields[f])}</label>${multi ? `<textarea name="${f}" rows="3">${esc(p[f] ?? "")}</textarea>` : `<input name="${f}" value="${esc(p[f] ?? "")}">`}`;
     }).join("")}<span></span><div class="actions"><button type="button" class="ghost" data-cancel>${t.cancel}</button><button type="submit">${t.save}</button></div></form>`;
-    const log = d.history.map((e) => `<div class="${e.undone ? "u" : ""}"><span class="t">${esc(new Date(e.ts).toLocaleString(this._hass.language))} · ${esc(a.tasks[e.task]?.name || e.task_name || e.task)} · ${esc(t.sources[e.source] || e.source)}${e.note ? ` · ${esc(e.note)}` : ""}</span>${e.undone ? `<span class="muted">${t.undone}</span>` : `<button class="ghost" data-undo="${esc(e.id)}">${t.undo}</button>`}</div>`).join("");
+    const log = d.history.map((e) => `<div class="${e.undone ? "u" : ""}"><span class="t"><b>${esc(a.tasks[e.task]?.name || e.task_name || e.task)}</b> · ${esc(t.sources[e.source] || e.source)}<br><span class="muted">${esc(new Date(e.ts).toLocaleString(this._hass.language))}${e.note ? ` · ${esc(e.note)}` : ""}</span></span>${e.undone ? `<span class="muted">${t.undone}</span>` : `<button class="ghost" data-undo="${esc(e.id)}">${t.undo}</button>`}</div>`).join("");
     const locSelect = this._siblings(d.id).find((e) => e.startsWith("select.") && this._hass.states[e]);
-    return `<div class="overlay" data-overlay><div class="dialog">
-      <div class="top">${pic}<div class="title"><div class="name" style="font-size:1.2em">${esc(name)}</div><div class="sub">${esc([p.common_name, p.species].filter(Boolean).join(" · "))}</div></div>${this._chip(st.state)}
-        <button class="ghost" data-close>${t.close}</button></div>
-      <div class="row"><button data-photo>${t.photo}</button><input type="file" accept="image/*" data-file hidden>
+    return `<div class="overlay" data-overlay><div class="dialog" style="--accent:${accent}">
+      <div class="hero">${bg}${pic}<div class="title"><div class="name">${esc(name)}</div><div class="sub">${esc([p.common_name, p.species].filter(Boolean).join(" · "))}</div>${this._chip(st.state)}</div>
+        <button class="ghost x" data-close aria-label="${t.close}">✕</button></div>
+      <div class="body">
+      ${tiles ? `<div class="tiles">${tiles}</div>` : ""}
+      <div class="toolbar"><button data-photo>📷 ${t.photo}</button><input type="file" accept="image/*" data-file hidden>
         ${locSelect ? `<select data-location>${["outdoor", "indoor"].map((o) => `<option value="${o}" ${this._hass.states[locSelect].state === o ? "selected" : ""}>${t[o]}</option>`).join("")}</select>` : ""}
-        <button class="ghost" data-edit>${t.edit}</button></div>
+        <button class="ghost" data-edit>✎ ${t.edit}</button></div>
       ${d.edit ? form : view}
-      ${d.chart ? this._chartSvg(d.chart) : ""}
-      <h3>${t.postpone} / ${t.backfill}</h3>
+      ${d.chart ? `<div class="sec">${this._chartSvg(d.chart)}</div>` : ""}
+      <div class="sec"><h3>${t.postpone} / ${t.backfill}</h3>
       <div class="row"><select data-task>${taskOptions}</select><input type="date" data-date value="${new Date().toISOString().slice(0, 10)}">
-        <button data-backfill>${t.backfill}</button><input type="number" min="1" max="60" value="1" data-days style="max-width:5em"><button data-postpone>${t.postpone}</button></div>
-      <h3>${t.history}</h3><div class="log">${log}</div></div></div>`;
+        <button data-backfill>${t.backfill}</button><input type="number" min="1" max="60" value="1" data-days style="max-width:5em"><button data-postpone>${t.postpone}</button></div></div>
+      ${log ? `<div class="sec"><h3>${t.history}</h3><div class="timeline">${log}</div></div>` : ""}</div></div></div>`;
   }
 
   _afterDialog() {

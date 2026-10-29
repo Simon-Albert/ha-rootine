@@ -138,7 +138,7 @@ const states = {
     card.shadowRoot.querySelector("[data-filter='all']").click();
     card.shadowRoot.querySelector("[data-details='sensor.satsuma_care_status']").click();
     await new Promise((r) => setTimeout(r, 100));
-    out.historyText = card.shadowRoot.querySelector(".log")?.textContent || "";
+    out.historyText = card.shadowRoot.querySelector(".timeline")?.textContent || "";
     out.taskOptions = [...card.shadowRoot.querySelectorAll("[data-task] option")].map((o) => o.value);
     window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
 

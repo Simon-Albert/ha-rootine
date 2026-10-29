@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.2
+
+**Geändert**
+
+- Neuer Details-Dialog: Kopfbereich mit großem Foto und Statusfarbe, Aufgaben als Kacheln, Steckbrief, Pflegetexte, Diagramm, Verschieben und Verlauf als eigene Abschnitte. Auf dem Handy öffnet er als Sheet von unten.
+
 ## 1.2.1
 
 **Geändert**

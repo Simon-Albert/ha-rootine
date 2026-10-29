@@ -64,7 +64,7 @@ const states = {
     await page.screenshot({ path: path.join(out, `card-overview-${theme}.png`) });
     await page.evaluate(async () => { window.__card._filter = "all"; window.__card._rendered = ""; window.__card._render(); await window.__card._open("sensor.zitrus_care_status"); });
     await page.waitForTimeout(300);
-    await page.setViewportSize({ width: 980, height: 900 });
+    await page.setViewportSize({ width: 980, height: 1150 });
     await page.screenshot({ path: path.join(out, `card-detail-${theme}.png`) });
     await page.close();
 
