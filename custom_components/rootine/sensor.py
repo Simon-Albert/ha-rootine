@@ -50,6 +50,8 @@ async def async_setup_entry(
 
 class CareStatusSensor(RootinePlantEntity, SensorEntity):
     _attr_translation_key = "care_status"
+    # large and changing often; the database only keeps the state and the location
+    _unrecorded_attributes = frozenset({"profile", "log", "tasks", "warnings", "moisture"})
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = STATUS_OPTIONS
 
@@ -144,6 +146,7 @@ class TaskNextDueSensor(RootineTaskEntity, SensorEntity):
 
 class DueCountSensor(RootineHubEntity, SensorEntity):
     _attr_translation_key = "due_count"
+    _unrecorded_attributes = frozenset({"items", "soon", "text"})
 
     def __init__(self, manager: RootineManager) -> None:
         super().__init__(manager)
