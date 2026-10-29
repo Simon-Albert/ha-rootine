@@ -246,6 +246,9 @@ class RootineManager:
                 log=list(saved.get("log", [])),
             )
             self._restore_sensor_state(plant, saved)
+            for state in plant.states.values():
+                if state.sensor_due_latched and state.latched_since is None:
+                    state.latched_since = now  # latched before v1.1.1: start counting now
             self.plants[subentry_id] = plant
         for gone in set(stored) - set(self.plants):
             del stored[gone]
@@ -624,6 +627,8 @@ class RootineManager:
                     and newest is not None
                     and dt_util.as_utc(newest) > dt_util.as_utc(state.last_done)
                 ):
+                    if not state.sensor_due_latched:
+                        state.latched_since = now  # due from today, overdue from tomorrow
                     state.sensor_due_latched = True
 
     def _confirm_unchanged_value(self, plant: PlantRuntime) -> None:
@@ -711,7 +716,10 @@ class RootineManager:
             plant.warnings[WARN_SENSOR]["reason"] in ("drop", "stale")
         )
         if state.sensor_due_latched and not sensor_trouble:
-            return DueResult(DueStatus.DUE, today, 0, None, None, "sensor")
+            since = (state.latched_since or now).date()
+            days = (since - today).days  # 0 on the day the latch was set, then negative
+            status = DueStatus.DUE if days >= 0 else DueStatus.OVERDUE
+            return DueResult(status, since, min(days, 0), None, None, "sensor")
         if timer.status in (DueStatus.DUE, DueStatus.OVERDUE, DueStatus.SOON) and has_plan:
             return timer
         if plant.moisture_value is None or sensor_trouble:
@@ -829,6 +837,7 @@ class RootineManager:
         plant = self.plants[subentry_id]
         plant.states[task_key].postponed_days += days
         plant.states[task_key].sensor_due_latched = False
+        plant.states[task_key].latched_since = None
         self._notify(plant)
 
     @callback

@@ -430,7 +430,8 @@ async def test_sensor_latch_button_and_battery(hass, freezer):
         freezer.tick(timedelta(hours=1))
         hass.states.async_set("sensor.nek", str(60 - hour))
         await hass.async_block_till_done()
-    assert hass.states.get("sensor.nektarine_watering").state == "due"
+    # latched during the decline; a day later it counts as overdue (review item 5)
+    assert hass.states.get("sensor.nektarine_watering").state in ("due", "overdue")
     assert hass.states.get("sensor.nektarine_watering").attributes["reason"] == "sensor"
     assert float(hass.states.get("number.nektarine_watering_threshold").state) == 50
     # press "watered": resets and does not re-latch until a newer reading arrives
@@ -887,3 +888,38 @@ async def test_valve_run_after_days_of_rest_is_detected(hass, freezer):
         if e["source"] == "valve"
     ]
     assert len(valve_logs) == 2
+
+
+async def test_sensor_latch_turns_overdue_from_the_next_day(hass, freezer):
+    hass.states.async_set("sensor.nek", "70")
+    entry = await setup_main(hass)
+    await make_sensor_plant(hass, entry, fertilize="")
+    for hour in range(60):  # slow decline until the evaluated value falls below 50
+        freezer.tick(timedelta(hours=1))
+        hass.states.async_set("sensor.nek", str(70 - hour))
+        await hass.async_block_till_done()
+        if hass.states.get("sensor.nektarine_watering").state in ("due", "overdue"):
+            break
+    first = hass.states.get("sensor.nektarine_watering")
+    assert first.state == "due" and first.attributes["days"] == 0
+    latched_day = dt_util.now().date()
+    freezer.move_to(
+        dt_util.start_of_local_day(latched_day + timedelta(days=1)) + timedelta(hours=9)
+    )
+    async_fire_time_changed(hass, dt_util.now())
+    await hass.async_block_till_done()
+    state = hass.states.get("sensor.nektarine_watering")
+    assert (state.state, state.attributes["days"]) == ("overdue", -1)
+    assert state.attributes["next_due"] == latched_day.isoformat()
+    due = await hass.services.async_call(
+        "rootine", "get_due", {}, blocking=True, return_response=True
+    )
+    assert "Nektarine: Gießen ist seit 1 Tag überfällig." in [i["text"] for i in due["items"]]
+    # survives a restart
+    await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert hass.states.get("sensor.nektarine_watering").state == "overdue"
+    freezer.tick(timedelta(days=1))
+    async_fire_time_changed(hass, dt_util.now())
+    await hass.async_block_till_done()
+    assert hass.states.get("sensor.nektarine_watering").attributes["days"] == -2
