@@ -125,18 +125,12 @@ def async_register_services(hass: HomeAssistant) -> None:
             for entry in hass.config_entries.async_loaded_entries(DOMAIN)
             if hasattr(entry, "runtime_data")
         ]
-        items: list[dict[str, Any]] = []
-        text = "Heute ist nichts zu tun."
-        for manager in managers:
-            items += manager.due_items(
-                include_soon=call.data["include_soon"], days_ahead=call.data["days_ahead"]
-            )
-            text = manager.due_summary()["text"]
-        for item in items:
-            item.pop("report_name", None)
-        count = sum(
-            1 for i in items if i["status"] in ("due", "overdue", "check_sensor", "protect")
+        if not managers:
+            return {"count": 0, "text": "Heute ist nichts zu tun.", "items": []}
+        summary = managers[0].due_summary(
+            include_soon=call.data["include_soon"], days_ahead=call.data["days_ahead"]
         )
+        count, text, items = summary["count"], summary["text"], summary["items"]
         return {"count": count, "text": text, "items": items}
 
     async def refresh_species(call: ServiceCall) -> None:

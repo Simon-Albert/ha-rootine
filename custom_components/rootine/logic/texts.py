@@ -30,6 +30,7 @@ class TextItem:
     days: int | None = None  # bei overdue: Tage überfällig (positiv); bei too_wet: Dauer
     reason: str | None = None
     value: float | None = None  # gemessene bzw. erwartete Temperatur
+    in_days: int | None = None  # fällig in n Tagen (nur für Vorschau mit days_ahead)
 
 
 def item_text(item: TextItem) -> str:
@@ -42,6 +43,8 @@ def item_text(item: TextItem) -> str:
         return f"{plant}: sehr nass."
     if item.status == "check_sensor":
         return _sensor_text(item)
+    if item.in_days and item.in_days > 1 and item.status in ("ok", "soon"):
+        return f"{plant}: {item.task_name} ist in {item.in_days} Tagen fällig."
     if item.status == "due":
         return f"{plant}: {item.task_name} ist heute fällig."
     if item.status == "soon":
@@ -90,6 +93,11 @@ def summary_text(items: list[TextItem]) -> str:
     today = [f"{i.plant} {task_verb(i.task_name)}" for i in items if i.status == "due"]
     overdue = [f"{i.plant} {task_verb(i.task_name)}" for i in items if i.status == "overdue"]
     soon = [f"{i.plant} {task_verb(i.task_name)}" for i in items if i.status == "soon"]
+    later = [
+        f"{i.plant} {task_verb(i.task_name)} (in {i.in_days} Tagen)"
+        for i in items
+        if i.status == "ok" and i.in_days and i.in_days > 1
+    ]
     warnings = [item_text(i) for i in items if i.status in ("protect", "too_wet", "check_sensor")]
     sentences: list[str] = []
     if today:
@@ -99,4 +107,6 @@ def summary_text(items: list[TextItem]) -> str:
     sentences.extend(warnings)
     if soon:
         sentences.append(f"Morgen: {_join(soon)}.")
+    if later:
+        sentences.append(f"Demnächst: {_join(later)}.")
     return " ".join(sentences) if sentences else "Heute ist nichts zu tun."

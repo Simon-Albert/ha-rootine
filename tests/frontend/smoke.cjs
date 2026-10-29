@@ -59,6 +59,8 @@ const states = {
     await new Promise((r) => setTimeout(r, 50));
     const out = { overview: card.shadowRoot.textContent };
     card.shadowRoot.querySelector("[data-done='water']").click();
+    await new Promise((r) => setTimeout(r, 20));
+    out.doneFeedback = card.shadowRoot.querySelector("[data-done='water']").textContent;
     card.shadowRoot.querySelector("[data-filter='all']").click();
     out.allText = card.shadowRoot.textContent;
     card.shadowRoot.querySelector("[data-details]").click();
@@ -67,7 +69,26 @@ const states = {
     out.hasChart = !!card.shadowRoot.querySelector("svg.chart path");
     out.xss = !!card.shadowRoot.querySelector("script");
     card.shadowRoot.querySelector("[data-postpone]").click();
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    out.closedByEscape = !card.shadowRoot.querySelector(".dialog");
     out.calls = calls;
+    // any entity of the plant resolves to its care sensor
+    const viaSibling = document.createElement("rootine-card");
+    viaSibling.setConfig({ entity: "sensor.satsuma_moisture" });
+    viaSibling.hass = hass;
+    document.body.appendChild(viaSibling);
+    out.sibling = viaSibling.shadowRoot.textContent;
+    // failing action shows a toast instead of failing silently
+    const failing = document.createElement("rootine-card");
+    failing.setConfig({ entity: "sensor.kaffee_care_status" });
+    failing.hass = { ...hass, callService: async () => { throw new Error("kaputt"); } };
+    document.body.appendChild(failing);
+    let toast = null;
+    failing.addEventListener("hass-notification", (e) => { toast = e.detail.message; });
+    failing.shadowRoot.querySelector("[data-done]").click();
+    await new Promise((r) => setTimeout(r, 20));
+    out.toast = toast;
+    out.buttonReenabled = !failing.shadowRoot.querySelector("[data-done]").disabled;
     const single = document.createElement("rootine-card");
     single.setConfig({ entity: "sensor.kaffee_care_status" });
     single.hass = hass;
@@ -90,5 +111,9 @@ const states = {
   if (!done || done[2].task !== "water") fail("mark_done not called");
   if (!result.calls.find((c) => c[1] === "postpone")) fail("postpone not called");
   if (!/Kaffee/.test(result.single)) fail("single card");
+  if (result.doneFeedback !== "✓") fail("no feedback after pressing done");
+  if (!result.closedByEscape) fail("escape does not close the dialog");
+  if (!/Satsuma-Mandarine/.test(result.sibling)) fail("sibling entity not resolved");
+  if (result.toast !== "kaputt" || !result.buttonReenabled) fail("errors are not shown");
   console.log("card smoke test ok");
 })();

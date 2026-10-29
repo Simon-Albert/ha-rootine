@@ -30,6 +30,7 @@ const T = {
     sources: { button: "Knopf", todo: "To-do", service: "Aktion", date_edit: "Datum", sensor: "Sensor",
       valve: "Ventil", rain: "Regen", setup: "Einrichtung" },
     noEntity: "Bitte eine Pflanze (entity) oder mode: overview angeben.",
+    uploadFailed: "Das Foto konnte nicht hochgeladen werden.",
   },
   en: {
     overview: "Plants", needs: "Needs care", all: "All", none: "All good.",
@@ -53,6 +54,7 @@ const T = {
     sources: { button: "Button", todo: "To-do", service: "Action", date_edit: "Date", sensor: "Sensor",
       valve: "Valve", rain: "Rain", setup: "Setup" },
     noEntity: "Please set a plant (entity) or mode: overview.",
+    uploadFailed: "The photo could not be uploaded.",
   },
 };
 
@@ -128,6 +130,11 @@ button { cursor: pointer; border: 1px solid color-mix(in srgb, var(--primary-tex
   padding: 3px 10px; }
 button:hover { background: color-mix(in srgb, var(--primary-color) 28%, transparent); }
 button.ghost { background: transparent; }
+button:disabled { cursor: default; opacity: .7; }
+button.busy { animation: pulse 1s ease-in-out infinite; }
+button.done { background: #22c55e; color: #fff; border-color: transparent; opacity: 1; }
+@keyframes pulse { 50% { opacity: .45; } }
+button:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 2px; }
 .warn { display: flex; flex-wrap: wrap; gap: 4px; }
 .actions { display: flex; gap: 6px; justify-content: flex-end; }
 .muted { color: var(--secondary-text-color); }
@@ -170,6 +177,13 @@ class RootineCard extends HTMLElement {
 
   getCardSize() { return this._config?.mode === "overview" ? 6 : 3; }
 
+  /** Size in sections dashboards. */
+  getGridOptions() {
+    return this._config?.mode === "overview"
+      ? { columns: "full", min_columns: 6 }
+      : { columns: 6, min_columns: 4 };
+  }
+
   static getConfigElement() { return document.createElement("rootine-card-editor"); }
   static getStubConfig(hass) {
     const first = Object.keys(hass.states).find((e) => hass.states[e].attributes?.profile && hass.states[e].attributes?.tasks);
@@ -190,9 +204,16 @@ class RootineCard extends HTMLElement {
     const isPlant = (s) => s?.attributes?.profile && s?.attributes?.tasks && s?.attributes?.location;
     const ids = this._config?.mode === "overview"
       ? Object.keys(states).filter((id) => isPlant(states[id]))
-      : [this._config?.entity].filter((id) => isPlant(states[id]));
+      : [this._resolve(this._config?.entity)].filter((id) => isPlant(states[id]));
     return ids.map((id) => ({ id, state: states[id].state, attrs: states[id].attributes, name: states[id].attributes.friendly_name?.replace(/ (Pflegestatus|Care status)$/i, "") || id }))
       .sort((a, b) => RANK.indexOf(a.state) - RANK.indexOf(b.state));
+  }
+
+  /** Accept any entity of a plant and find its care status sensor through the device. */
+  _resolve(id) {
+    const states = this._hass?.states || {};
+    if (!id || states[id]?.attributes?.profile) return id;
+    return this._siblings(id).find((e) => states[e]?.attributes?.profile && states[e]?.attributes?.tasks) || id;
   }
 
   /** Entities of the same device (select for location, moisture sensor). */
@@ -256,21 +277,46 @@ class RootineCard extends HTMLElement {
     root.querySelectorAll("[data-filter]").forEach((b) => b.addEventListener("click", () => {
       this._filter = b.dataset.filter; this._rendered = ""; this._render();
     }));
-    root.querySelectorAll("[data-done]").forEach((b) => b.addEventListener("click", () =>
-      this._hass.callService("rootine", "mark_done", { entity_id: b.dataset.plant, task: b.dataset.done })));
+    root.querySelectorAll("[data-done]").forEach((b) => b.addEventListener("click", async () => {
+      b.disabled = true;
+      b.classList.add("busy");
+      const ok = await this._call("rootine", "mark_done", { entity_id: b.dataset.plant, task: b.dataset.done });
+      b.classList.remove("busy");
+      if (ok) { b.textContent = "✓"; b.classList.add("done"); } else { b.disabled = false; }
+    }));
     root.querySelectorAll("[data-details]").forEach((b) => b.addEventListener("click", () => this._open(b.dataset.details)));
+  }
+
+  /** Call an action; show HA's toast on failure instead of failing silently. */
+  async _call(domain, service, data) {
+    try {
+      await this._hass.callService(domain, service, data);
+      return true;
+    } catch (err) {
+      this._toast(err?.message || String(err));
+      return false;
+    }
+  }
+
+  _toast(message) {
+    this.dispatchEvent(new CustomEvent("hass-notification", { detail: { message }, bubbles: true, composed: true }));
   }
 
   // ---- detail dialog ----
 
   async _open(id) {
     this._dialog = { id, edit: false, history: [], chart: null };
+    this._onKey = (e) => { if (e.key === "Escape") this._close(); };
+    window.addEventListener("keydown", this._onKey);
     this._render();
     await this._loadHistory();
     this._loadChart();
   }
 
-  _close() { this._dialog = null; this._rendered = ""; this._render(); }
+  _close() {
+    window.removeEventListener("keydown", this._onKey);
+    this._dialog = null; this._rendered = ""; this._render();
+  }
 
   async _loadHistory() {
     try {
@@ -379,7 +425,7 @@ class RootineCard extends HTMLElement {
         const v = e.target.elements[f].value.trim();
         if (v !== (current[f] ?? "")) data[f.replace(".", "_")] = v;
       }
-      if (Object.keys(data).length > 1) await this._hass.callService("rootine", "update_profile", data);
+      if (Object.keys(data).length > 1) await this._call("rootine", "update_profile", data);
       d.edit = false; this._render();
     });
     q("[data-photo]")?.addEventListener("click", () => q("[data-file]").click());
@@ -388,25 +434,30 @@ class RootineCard extends HTMLElement {
       if (!file) return;
       const body = new FormData();
       body.append("file", file);
-      const res = await this._hass.fetchWithAuth("/api/image/upload", { method: "POST", body });
-      const json = await res.json();
-      await this._hass.callService("rootine", "set_photo", { entity_id: d.id,
-        photo: { media_content_id: `media-source://image_upload/${json.id}`, media_content_type: file.type || "image/jpeg" } });
+      try {
+        const res = await this._hass.fetchWithAuth("/api/image/upload", { method: "POST", body });
+        if (!res.ok) throw new Error(String(res.status));
+        const json = await res.json();
+        await this._call("rootine", "set_photo", { entity_id: d.id,
+          photo: { media_content_id: `media-source://image_upload/${json.id}`, media_content_type: file.type || "image/jpeg" } });
+      } catch (err) {
+        this._toast(t.uploadFailed);
+      }
     });
     q("[data-location]")?.addEventListener("change", (e) => {
       const sel = this._siblings(d.id).find((x) => x.startsWith("select."));
-      this._hass.callService("select", "select_option", { entity_id: sel, option: e.target.value });
+      this._call("select", "select_option", { entity_id: sel, option: e.target.value });
     });
     q("[data-backfill]")?.addEventListener("click", async () => {
       const date = q("[data-date]").value;
-      await this._hass.callService("rootine", "mark_done", { entity_id: d.id, task: q("[data-task]").value,
+      await this._call("rootine", "mark_done", { entity_id: d.id, task: q("[data-task]").value,
         when: `${date}T12:00:00`, note: t.backfill });
       await this._loadHistory();
     });
     q("[data-postpone]")?.addEventListener("click", () =>
-      this._hass.callService("rootine", "postpone", { entity_id: d.id, task: q("[data-task]").value, days: Number(q("[data-days]").value) || 1 }));
+      this._call("rootine", "postpone", { entity_id: d.id, task: q("[data-task]").value, days: Number(q("[data-days]").value) || 1 }));
     root.querySelectorAll("[data-undo]").forEach((b) => b.addEventListener("click", async () => {
-      await this._hass.callService("rootine", "undo_event", { entity_id: d.id, event_id: b.dataset.undo });
+      await this._call("rootine", "undo_event", { entity_id: d.id, event_id: b.dataset.undo });
       await this._loadHistory();
     }));
     const svg = q("[data-chart]");

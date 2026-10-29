@@ -66,7 +66,7 @@
         },
         "profile": {
           "title": "Steckbrief",
-          "description": "Alles ist optional und später änderbar.\nBild: {image}",
+          "description": "Alles ist optional und später änderbar.{image}",
           "data": {
             "common_name": "Name der Art",
             "species": "Wissenschaftlicher Name",

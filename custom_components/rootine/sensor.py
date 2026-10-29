@@ -8,7 +8,7 @@ from typing import Any
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import PERCENTAGE
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .entity import RootineHubEntity, RootinePlantEntity, RootineTaskEntity
@@ -144,20 +144,36 @@ class TaskNextDueSensor(RootineTaskEntity, SensorEntity):
 
 class DueCountSensor(RootineHubEntity, SensorEntity):
     _attr_translation_key = "due_count"
-    _attr_native_unit_of_measurement = None
 
     def __init__(self, manager: RootineManager) -> None:
         super().__init__(manager)
         self._attr_unique_id = f"{manager.entry.entry_id}_due_count"
+        self._cache: dict[str, Any] | None = None
 
     @property
     def native_value(self) -> int:
-        return self.manager.due_summary()["count"]
+        return self._summary()["count"]
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        summary = self.manager.due_summary()
-        return {"items": summary["items"], "soon": summary["soon"], "text": summary["text"]}
+        summary = self._summary()
+        items = summary["items"]
+        return {
+            "items": [i for i in items if i["status"] != "soon"],
+            "soon": [i for i in items if i["status"] == "soon"],
+            "text": summary["text"],
+        }
+
+    def _summary(self) -> dict[str, Any]:
+        if self._cache is None:
+            self._cache = self.manager.due_summary()
+        return self._cache
+
+    @callback
+    def _refresh(self) -> None:
+        # one computation per update, shared by state and attributes
+        self._cache = self.manager.due_summary()
+        self.async_write_ha_state()
 
 
 class MoistureEvalSensor(RootinePlantEntity, SensorEntity):

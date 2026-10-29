@@ -215,3 +215,29 @@ async def test_reconfigure_rename(hass):
     assert entry.subentries[sid].title == "Coffea"
     assert entry.subentries[sid].unique_id == "coffea"
     assert entry.runtime_data.plants[sid].settings.location == "outdoor"
+
+
+async def _water_default(hass, entry, location):
+    flow = hass.config_entries.subentries
+    result = await start(hass, entry)
+    result = await flow.async_configure(
+        result["flow_id"], {"name": f"P{location}", "location": location}
+    )
+    result = await flow.async_configure(result["flow_id"], {})
+    result = await flow.async_configure(result["flow_id"], {})
+    mode = next(k for k in result["data_schema"].schema if str(k) == "mode")
+    return mode.default()
+
+
+async def test_rain_mode_only_preselected_with_rain_sensor(hass):
+    entry = await setup_main(hass)
+    assert await _water_default(hass, entry, "outdoor") == "timer"
+    entry2 = await setup_main_with_rain(hass)
+    assert await _water_default(hass, entry2, "outdoor") == "rain"
+
+
+async def setup_main_with_rain(hass):
+    entry = next(iter(hass.config_entries.async_entries("rootine")))
+    hass.config_entries.async_update_entry(entry, options={"rain_entity": "sensor.rain"})
+    await hass.async_block_till_done()
+    return entry

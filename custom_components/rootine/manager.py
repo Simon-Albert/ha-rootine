@@ -77,6 +77,10 @@ from .store import (
 _LOGGER = logging.getLogger(__name__)
 
 SAMPLE_KEEP = timedelta(hours=48)
+# A sensor that keeps reporting the same value only fires state_reported, not state_changed.
+# Confirm such a value at most once per hour so the carry-forward never expires while the
+# sensor is alive.
+CONFIRM_EVERY = timedelta(hours=1)
 VALVE_KEEP = timedelta(hours=48)
 FORECAST_MAX_AGE = climate.FORECAST_MAX_AGE
 WARNING_ORDER = (WARN_PROTECT, WARN_TOO_WET, WARN_SENSOR)
@@ -85,6 +89,8 @@ _WARNING_STATUS = {
     WARN_TOO_WET: DueStatus.TOO_WET,
     WARN_SENSOR: DueStatus.CHECK_SENSOR,
 }
+# statuses that need attention; counted by the hub sensor and get_due alike
+URGENT = frozenset({"protect", "overdue", "due", "too_wet", "check_sensor"})
 # get_due order (plan 8.4): protect, overdue, due, too_wet, sensor_check, soon
 _ITEM_RANK = {"protect": 0, "overdue": 1, "due": 2, "too_wet": 3, "check_sensor": 4, "soon": 5}
 
@@ -559,6 +565,7 @@ class RootineManager:
     def _update_moisture(self, plant: PlantRuntime, now: datetime) -> None:
         if not plant.moisture_entity:
             return
+        self._confirm_unchanged_value(plant)
         plant.moisture_value = moisture.evaluate(plant.samples, now, plant.method)
         # too wet always uses the smoothed median (plan 7.11)
         median = (
@@ -589,6 +596,19 @@ class RootineManager:
                     and newest > state.last_done
                 ):
                     state.sensor_due_latched = True
+
+    def _confirm_unchanged_value(self, plant: PlantRuntime) -> None:
+        state = self._state(plant.moisture_entity)
+        value = _as_float(state)
+        if value is None or state is None or not plant.samples:
+            return
+        reported = dt_util.as_local(state.last_reported)
+        last_ts, last_value = plant.samples[-1]
+        if value == last_value and reported - last_ts >= CONFIRM_EVERY:
+            plant.samples.append((reported, value))
+            cutoff = reported - SAMPLE_KEEP
+            while len(plant.samples) > 1 and plant.samples[1][0] < cutoff:
+                plant.samples.pop(0)
 
     def _sensor_stale(self, plant: PlantRuntime, now: datetime) -> bool:
         state = self._state(plant.moisture_entity)
@@ -724,7 +744,13 @@ class RootineManager:
         self._append_log(plant, self._log_entry(task_key, source, note, when))
         self.hass.bus.async_fire(
             EVENT_TASK_DONE,
-            {"plant": plant.name, "task": task_key, "source": source, "when": when.isoformat()},
+            {
+                "plant": plant.name,
+                "task": task_key,
+                "task_name": plant.task(task_key).name,
+                "source": source,
+                "when": when.isoformat(),
+            },
         )
 
     @callback
@@ -880,6 +906,7 @@ class RootineManager:
                         "reason": plant.warnings[key].get("reason"),
                         "location": plant.settings.location,
                         "text": item_text(text_item),
+                        "_text": text_item,
                     }
                 )
             for task in plant.tasks:
@@ -901,7 +928,13 @@ class RootineManager:
                     continue
                 days = -res.days if res.days is not None and res.days < 0 else 0
                 text_item = TextItem(
-                    plant.name, task.key, report_name(task), res.status.value, days, res.reason
+                    plant.name,
+                    task.key,
+                    report_name(task),
+                    res.status.value,
+                    days,
+                    res.reason,
+                    in_days=res.days if within else None,
                 )
                 items.append(
                     {
@@ -916,6 +949,7 @@ class RootineManager:
                         "reason": res.reason,
                         "location": plant.settings.location,
                         "text": item_text(text_item),
+                        "_text": text_item,
                     }
                 )
         items.sort(key=lambda i: (_ITEM_RANK.get(i["status"], 9), i["days"] or 0))
@@ -928,36 +962,15 @@ class RootineManager:
             "sensor", "rootine", f"{subentry_id}_care_status"
         )
 
-    def due_summary(self) -> dict[str, Any]:
-        items = self.due_items()
-        text_items = []
-        for item in items:
-            text_items.append(
-                TextItem(
-                    item["plant"],
-                    item["task"],
-                    item["task_name"]
-                    if item["task"] not in (WARN_PROTECT, WARN_TOO_WET, WARN_SENSOR)
-                    else "",
-                    item["status"],
-                    max(0, -(item["days"] or 0)),
-                    item["reason"],
-                    self._warning_value(item),
-                )
-            )
-        count = sum(1 for i in items if i["status"] in ("due", "overdue", "check_sensor"))
+    def due_summary(self, *, include_soon: bool = True, days_ahead: int = 0) -> dict[str, Any]:
+        """Count, items and the spoken summary, all from the same selection."""
+        items = self.due_items(include_soon=include_soon, days_ahead=days_ahead)
+        public = [_public(i) for i in items]
         return {
-            "count": count,
-            "items": [_public(i) for i in items if i["status"] != "soon"],
-            "soon": [_public(i) for i in items if i["status"] == "soon"],
-            "text": summary_text(text_items),
+            "count": sum(1 for i in items if i["status"] in URGENT),
+            "items": public,
+            "text": summary_text([i["_text"] for i in items]),
         }
-
-    def _warning_value(self, item: dict[str, Any]) -> float | None:
-        if item["task"] != WARN_PROTECT:
-            return None
-        plant = next((p for p in self.plants.values() if p.name == item["plant"]), None)
-        return plant.warnings.get(WARN_PROTECT, {}).get("value") if plant else None
 
     def todo_items(self) -> list[dict[str, Any]]:
         """Open to-do entries: due/overdue tasks and unacknowledged warnings."""
@@ -1006,4 +1019,4 @@ class RootineManager:
 
 
 def _public(item: dict[str, Any]) -> dict[str, Any]:
-    return {k: v for k, v in item.items() if k != "report_name"}
+    return {k: v for k, v in item.items() if not k.startswith("_") and k != "report_name"}

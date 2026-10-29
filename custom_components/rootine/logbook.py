@@ -31,9 +31,10 @@ def async_describe_events(
     def describe(event: Event) -> dict[str, Any]:
         data = event.data
         source = SOURCES.get(data.get("source", ""), data.get("source", ""))
+        task = data.get("task_name") or data.get("task")
         return {
             LOGBOOK_ENTRY_NAME: data.get("plant"),
-            LOGBOOK_ENTRY_MESSAGE: f"{data.get('task')} erledigt ({source})",
+            LOGBOOK_ENTRY_MESSAGE: f"{task} erledigt ({source})",
         }
 
     async_describe_event(DOMAIN, EVENT_TASK_DONE, describe)

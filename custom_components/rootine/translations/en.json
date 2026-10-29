@@ -66,7 +66,7 @@
         },
         "profile": {
           "title": "Plant profile",
-          "description": "Everything is optional and can be changed later.\nImage: {image}",
+          "description": "Everything is optional and can be changed later.{image}",
           "data": {
             "common_name": "Common name",
             "species": "Species",

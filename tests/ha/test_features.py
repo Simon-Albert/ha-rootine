@@ -817,3 +817,44 @@ async def test_care_status_exposes_moisture_for_the_card(hass):
     assert moisture["threshold"] == 50 and moisture["raw"] == 70
     await add_plant(hass, entry, "Kaffee")
     assert hass.states.get("sensor.kaffee_care_status").attributes["moisture"] is None
+
+
+async def test_stable_sensor_keeps_a_value_beyond_36_hours(hass, freezer):
+    """A sensor that keeps reporting the same value must not turn into "unknown"."""
+    hass.states.async_set("sensor.nek", "70")
+    entry = await setup_main(hass)
+    sid = await make_sensor_plant(hass, entry, fertilize="")
+    manager = entry.runtime_data
+    for _ in range(60):
+        freezer.tick(timedelta(hours=1))
+        hass.states.async_set("sensor.nek", "70")  # same value: HA only fires state_reported
+        async_fire_time_changed(hass, dt_util.now())
+        await hass.async_block_till_done()
+    assert manager.plants[sid].moisture_value == 70
+    assert "sensor_check" not in manager.plants[sid].warnings
+    assert hass.states.get("sensor.nektarine_watering").state == "ok"
+    # bounded: about one confirmation per hour, not one per report
+    assert len(manager.plants[sid].samples) <= 50
+
+
+async def test_sensor_mode_without_sensor_falls_back_to_schedule(hass):
+    hass.states.async_set("sensor.sat", "70")
+    entry = await setup_main(hass)
+    sid = await add_plant(
+        hass,
+        entry,
+        "Satsuma",
+        mode="sensor",
+        water="ganzjährig: 3",
+        last_done="2026-10-20",
+        sensors={"moisture_entity": "sensor.sat"},
+        water_extra={"moisture_threshold": 50},
+    )
+    flow = hass.config_entries.subentries
+    result = await hass.config_entries.subentries.async_init(
+        (entry.entry_id, "plant"), context={"source": "reconfigure", "subentry_id": sid}
+    )
+    result = await flow.async_configure(result["flow_id"], {"next_step_id": "sensors_edit"})
+    await flow.async_configure(result["flow_id"], {})  # sensor removed
+    await hass.async_block_till_done()
+    assert hass.states.get("sensor.satsuma_watering").state == "overdue"

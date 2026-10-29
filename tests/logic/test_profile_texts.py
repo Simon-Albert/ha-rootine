@@ -160,3 +160,13 @@ def test_more_texts():
     assert item_text(T("A", "water", "Gießen", "ok")) == "A: Gießen ist in Ordnung."
     warn = summary_text([T("A", "protect", "", "protect", reason="cold_now", value=1)])
     assert warn == "A: zu kalt, gemessen 1 Grad."
+
+
+def test_upcoming_texts():
+    T = TextItem
+    item = T("Kaffee", "water", "Gießen", "ok", in_days=3)
+    assert item_text(item) == "Kaffee: Gießen ist in 3 Tagen fällig."
+    assert summary_text([item]) == "Demnächst: Kaffee gießen (in 3 Tagen)."
+    assert item_text(T("Kaffee", "water", "Gießen", "soon", in_days=1)) == (
+        "Kaffee: Gießen ist morgen fällig."
+    )

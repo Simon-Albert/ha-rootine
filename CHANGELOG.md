@@ -7,6 +7,21 @@
 - **Blueprints:** „Tägliche Pflege-Erinnerung“ und „Pflanzenbericht per Sprachausgabe“, importierbar mit einem Klick.
 - **Formulare:** Hilfetexte zu den wichtigsten Feldern (Regen, Sensoren, Gieß-Schwelle, Grenzwerte).
 - README mit Screenshots und Schnellinstallation.
+- **Karte bedienbarer:** sofortiges ✓ nach „Gegossen“, Fehler erscheinen als Hinweis statt still zu scheitern,
+  Escape schließt den Dialog, jede Entität einer Pflanze funktioniert als `entity`, Größen für Sections-Dashboards.
+
+**Behoben**
+
+- Ein Feuchtesensor, der lange denselben Wert meldet, wurde nach 36 Stunden als „ohne Wert“ behandelt
+  (Gießen sprang auf „Unbekannt“). Rootine bestätigt den Wert jetzt über `last_reported`.
+- Der Sammeltext nutzte bei englischer HA-Oberfläche englische Aufgabennamen („Kirsche Watering erledigen“).
+- `get_due` mit `include_soon: false` nannte im Text trotzdem „Morgen: …“; Vorschau mit `days_ahead`
+  liefert jetzt „ist in 3 Tagen fällig“ statt „ist in Ordnung“.
+- Hub-Sensor und `get_due` zählen gleich und berücksichtigen auch Schutz-, Nässe- und Sensor-Warnungen.
+- „Plan + Regen“ wird nur noch vorgeschlagen, wenn ein Regensensor eingerichtet ist.
+- Logbuch zeigt den Aufgabennamen („Gießen erledigt“) statt des Schlüssels; das Ereignis
+  `rootine_task_done` enthält zusätzlich `task_name`.
+- OpenPlantbook-Bild erscheint im Steckbrief-Formular als Vorschau statt als Link.
 
 ## 1.0.0
 

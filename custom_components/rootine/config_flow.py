@@ -376,6 +376,7 @@ class PlantSubentryFlow(ConfigSubentryFlow):
             if has_sensor
             else WaterMode.RAIN.value
             if self._location == LOCATION_OUTDOOR
+            and self._get_entry().options.get(CONF_RAIN_ENTITY)
             else WaterMode.TIMER.value
         )
         return self.async_show_form(
@@ -904,7 +905,8 @@ _SENSOR_KEYS = (
 
 
 def _image_hint(profile: Profile) -> str:
-    return profile.opb_image_url or "–"
+    """Markdown preview of the OpenPlantbook image (form descriptions render markdown)."""
+    return f"\n\n![]({profile.opb_image_url})" if profile.opb_image_url else ""
 
 
 def _hint_from_profile(profile: Profile) -> str:
