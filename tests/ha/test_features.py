@@ -807,3 +807,13 @@ async def test_orphan_registry_cleanup_after_sensor_removed(hass):
     await flow.async_configure(result["flow_id"], {})
     await hass.async_block_till_done()
     assert hass.states.get("sensor.satsuma_evaluated_soil_moisture") is None
+
+
+async def test_care_status_exposes_moisture_for_the_card(hass):
+    hass.states.async_set("sensor.nek", "70")
+    entry = await setup_main(hass)
+    await make_sensor_plant(hass, entry, fertilize="")
+    moisture = hass.states.get("sensor.nektarine_care_status").attributes["moisture"]
+    assert moisture["threshold"] == 50 and moisture["raw"] == 70
+    await add_plant(hass, entry, "Kaffee")
+    assert hass.states.get("sensor.kaffee_care_status").attributes["moisture"] is None

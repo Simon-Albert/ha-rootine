@@ -13,6 +13,7 @@ const states = {
         "care.watering": "Gleichmäßig **feucht**", notes: "# Notiz\n- Nicht <script>alert(1)</script>" },
       tasks: { water: { name: "Gießen", status: "overdue", days: -2 }, fertilize: { name: "Düngen", status: "rest", days: null } },
       warnings: [{ key: "protect", reason: "cold_forecast", value: 2 }],
+      moisture: { value: 42, raw: 40, threshold: 50, max: 95 },
     },
   },
   "sensor.kaffee_care_status": {
@@ -83,6 +84,7 @@ const states = {
   if (!/Überfällig/.test(result.overview) || !/Schutz nötig/.test(result.overview)) fail("status/warning missing");
   if (!/Kaffee/.test(result.allText)) fail("filter 'all' wrong");
   if (!/Gleichmäßig/.test(result.dialog) || !result.hasChart) fail("dialog/chart missing");
+  if (!/Schwelle 50/.test(result.overview) || !/Bewertung 42/.test(result.overview)) fail("moisture bar missing");
   if (result.xss) fail("markdown not escaped");
   const done = result.calls.find((c) => c[1] === "mark_done");
   if (!done || done[2].task !== "water") fail("mark_done not called");

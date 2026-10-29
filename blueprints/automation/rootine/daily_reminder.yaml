@@ -1,0 +1,50 @@
+blueprint:
+  name: Rootine – tägliche Pflege-Erinnerung
+  description: >-
+    Fragt jeden Tag zur eingestellten Zeit ab, was bei den Pflanzen fällig ist, und führt deine
+    Aktionen aus, zum Beispiel eine Push-Nachricht. Wenn nichts fällig ist, passiert nichts.
+    In deinen Aktionen stehen `text` (fertiger deutscher Satz), `count` (Anzahl) und `items`
+    (Liste mit Pflanze, Aufgabe, Status) zur Verfügung.
+  domain: automation
+  author: Rootine
+  input:
+    reminder_time:
+      name: Uhrzeit
+      description: Wann soll die Erinnerung kommen?
+      default: "08:00:00"
+      selector:
+        time:
+    include_soon:
+      name: Auch „morgen fällig“ nennen
+      default: true
+      selector:
+        boolean:
+    notify_actions:
+      name: Aktionen
+      description: >-
+        Was soll passieren? Zum Beispiel „Benachrichtigung senden“ mit der Nachricht
+        `{{ text }}`.
+      default: []
+      selector:
+        action:
+
+mode: single
+
+triggers:
+  - trigger: time
+    at: !input reminder_time
+
+actions:
+  - action: rootine.get_due
+    data:
+      include_soon: !input include_soon
+    response_variable: due
+  - if:
+      - condition: template
+        value_template: "{{ due['items'] | length > 0 }}"
+    then:
+      - variables:
+          text: "{{ due.text }}"
+          count: "{{ due.count }}"
+          items: "{{ due['items'] }}"
+      - sequence: !input notify_actions

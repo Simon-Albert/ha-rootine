@@ -1,0 +1,48 @@
+blueprint:
+  name: Rootine – Pflanzenbericht per Sprachausgabe
+  description: >-
+    Liest auf Knopfdruck oder zu einer Uhrzeit vor, was bei den Pflanzen ansteht, zum Beispiel
+    „Heute zu tun: Pflanze A gießen. Überfällig: Pflanze B gießen.“ Ist nichts fällig, sagt der
+    Bericht das auch.
+  domain: automation
+  author: Rootine
+  input:
+    tts_entity:
+      name: Sprachausgabe (TTS)
+      selector:
+        entity:
+          domain: tts
+    speaker:
+      name: Lautsprecher
+      selector:
+        entity:
+          domain: media_player
+    report_time:
+      name: Uhrzeit
+      description: Wann soll der Bericht gesprochen werden? Manuell geht es jederzeit über „Ausführen“.
+      default: "18:00:00"
+      selector:
+        time:
+    include_soon:
+      name: Auch „morgen fällig“ nennen
+      default: true
+      selector:
+        boolean:
+
+mode: single
+
+triggers:
+  - trigger: time
+    at: !input report_time
+
+actions:
+  - action: rootine.get_due
+    data:
+      include_soon: !input include_soon
+    response_variable: due
+  - action: tts.speak
+    target:
+      entity_id: !input tts_entity
+    data:
+      media_player_entity_id: !input speaker
+      message: "{{ due.text }}"

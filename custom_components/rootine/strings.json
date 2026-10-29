@@ -10,6 +10,13 @@
           "default_location": "Default location for new plants",
           "weather_entity": "Weather (forecast)",
           "outdoor_temp_entity": "Outdoor temperature"
+        },
+        "data_description": {
+          "rain_entity": "Sensor with the daily rain total in mm. Needed for the rain mode.",
+          "rain_threshold": "Rain since the last watering that counts as watered (default 5 mm). Each plant can have its own value.",
+          "weather_entity": "Provides the forecast for frost and heat warnings (queried hourly).",
+          "outdoor_temp_entity": "Outdoor temperature for plants without their own sensor. Only it can trigger heat warnings.",
+          "default_location": "Default for new plants. Each plant can be changed later."
         }
       }
     },
@@ -27,6 +34,13 @@
           "default_location": "Default location for new plants",
           "weather_entity": "Weather (forecast)",
           "outdoor_temp_entity": "Outdoor temperature"
+        },
+        "data_description": {
+          "rain_entity": "Sensor with the daily rain total in mm. Needed for the rain mode.",
+          "rain_threshold": "Rain since the last watering that counts as watered (default 5 mm). Each plant can have its own value.",
+          "weather_entity": "Provides the forecast for frost and heat warnings (queried hourly).",
+          "outdoor_temp_entity": "Outdoor temperature for plants without their own sensor. Only it can trigger heat warnings.",
+          "default_location": "Default for new plants. Each plant can be changed later."
         }
       }
     }
@@ -45,6 +59,9 @@
             "name": "Name",
             "location": "Location",
             "search": "Search species at OpenPlantbook (optional)"
+          },
+          "data_description": {
+            "search": "Optional. Pre-fills the profile, everything stays editable. Leave empty to enter by hand."
           }
         },
         "profile": {
@@ -76,6 +93,14 @@
             "moisture_threshold": "Watering threshold (%)",
             "moisture_method": "Moisture evaluation",
             "valve_counts_as_watering": "Valve run counts as watered"
+          },
+          "data_description": {
+            "mode": "By schedule: fixed intervals. Schedule + rain: rain counts as watering. By sensor: the soil moisture sensor decides.",
+            "schedule_text": "One line per period, e.g. 01.03.–31.10.: 6. Empty = no fixed schedule (with a sensor: no “at the latest”).",
+            "moisture_threshold": "Watering is due when the evaluated moisture falls below this. The scale depends on your sensor.",
+            "moisture_method": "The 24 h median smooths the daily swing (sun) and is almost always the best choice.",
+            "valve_counts_as_watering": "Off for sensor plants: the sensor decides, the valve is only used for classification.",
+            "last_done": "So the schedule knows where to start."
           }
         },
         "fertilize": {
@@ -143,6 +168,13 @@
             "moisture_threshold": "Watering threshold (%)",
             "moisture_method": "Moisture evaluation",
             "valve_counts_as_watering": "Valve run counts as watered"
+          },
+          "data_description": {
+            "mode": "By schedule: fixed intervals. Schedule + rain: rain counts as watering. By sensor: the soil moisture sensor decides.",
+            "schedule_text": "One line per period, e.g. 01.03.–31.10.: 6. Empty = no fixed schedule (with a sensor: no “at the latest”).",
+            "moisture_threshold": "Watering is due when the evaluated moisture falls below this. The scale depends on your sensor.",
+            "moisture_method": "The 24 h median smooths the daily swing (sun) and is almost always the best choice.",
+            "valve_counts_as_watering": "Off for sensor plants: the sensor decides, the valve is only used for classification."
           }
         },
         "fertilize_edit": {
@@ -173,6 +205,12 @@
             "temperature_entity": "Temperature sensor",
             "battery_entity": "Battery",
             "valve_entity": "Irrigation valve"
+          },
+          "data_description": {
+            "moisture_entity": "With a moisture sensor, mode “by sensor”, “too wet” and watering detection become available.",
+            "temperature_entity": "For the cold protection warning. Heat is never derived from this sensor.",
+            "battery_entity": "Warns below 15 %.",
+            "valve_entity": "Rootine only reads the valve, it never switches it."
           }
         },
         "sensors_edit": {
@@ -182,6 +220,9 @@
             "temperature_entity": "Temperature sensor",
             "battery_entity": "Battery",
             "valve_entity": "Irrigation valve"
+          },
+          "data_description": {
+            "moisture_entity": "The plant's moisture sensor."
           }
         },
         "limits": {
@@ -192,6 +233,12 @@
             "temp_max": "Heat protection above (°C)",
             "moisture_max": "Too wet from (%)",
             "rain_threshold": "Own rain threshold (mm)"
+          },
+          "data_description": {
+            "temp_min": "Below this “protection needed” is reported (e.g. 5 °C to bring the plant inside).",
+            "temp_max": "Above this “protection needed” is reported, only from forecast or outdoor sensor.",
+            "moisture_max": "If moisture stays this high for 48 hours, “too wet” is reported (waterlogging).",
+            "rain_threshold": "Overrides the global rain threshold for this plant."
           }
         },
         "limits_edit": {
@@ -202,6 +249,12 @@
             "temp_max": "Heat protection above (°C)",
             "moisture_max": "Too wet from (%)",
             "rain_threshold": "Own rain threshold (mm)"
+          },
+          "data_description": {
+            "temp_min": "Empty = off.",
+            "temp_max": "Empty = off.",
+            "moisture_max": "Empty = off.",
+            "rain_threshold": "Empty = global value."
           }
         },
         "openplantbook": {

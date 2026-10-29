@@ -1,8 +1,19 @@
 # Rootine
 
-Pflegeroutinen für Pflanzen in Home Assistant: **Gießen, Düngen und weitere Aufgaben**, mit oder ohne
-Bodensensor, mit Steckbrief und Foto pro Pflanze und optionalen Artdaten aus OpenPlantbook.
+[![HACS](https://img.shields.io/badge/HACS-Custom-41bdf5.svg)](https://hacs.xyz)
+[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.10%2B-18bcf2.svg)](https://www.home-assistant.io)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
+**Pflegeroutinen für Pflanzen in Home Assistant:** Gießen, Düngen und weitere Aufgaben, mit oder ohne Bodensensor,
+mit Steckbrief und Foto pro Pflanze und optionalen Artdaten aus OpenPlantbook.
 Alles läuft lokal, ohne eigene Cloud-Anbindung und ohne zusätzliche Abhängigkeiten.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/card-overview-dark.png">
+  <img alt="Übersicht der Rootine-Karte" src="images/card-overview-light.png">
+</picture>
+
+[![Rootine in HACS öffnen](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Simon-Albert&repository=ha-rootine&category=integration)
 
 *English summary: see the bottom of this page.*
 
@@ -143,9 +154,23 @@ type: custom:rootine-card
 mode: overview                        # alle Pflanzen, sortiert nach Dringlichkeit
 ```
 
-Die Karte zeigt Foto, Status, Warnungen und je Aufgabe einen Knopf. „Details“ öffnet Steckbrief (bearbeitbar), Foto
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/card-detail-dark.png">
+  <img alt="Detailansicht mit Steckbrief, Diagramm und Verlauf" src="images/card-detail-light.png" width="720">
+</picture>
+
+Die Karte zeigt Foto, Status in Farbe, Warnungen, einen Feuchte-Balken mit Gieß-Schwelle und je Aufgabe einen Knopf. „Details“ öffnet Steckbrief (bearbeitbar), Foto
 ändern, 48-Stunden-Diagramm der Bodenfeuchte mit Schwelle, Verschieben, Nachtragen und den Verlauf mit „Rückgängig“.
 Sie nutzt Theme-Variablen und passt zu gläsernen Dashboards (`--ha-card-background`, `--ha-card-backdrop-blur`).
+
+## Fertige Automationen (Blueprints)
+
+Zwei Vorlagen zum Importieren, ohne YAML zu schreiben:
+
+| Vorlage | Zweck | Importieren |
+|---|---|---|
+| **Tägliche Pflege-Erinnerung** | Zur Uhrzeit abfragen, was fällig ist, und deine Aktionen ausführen (z. B. Push). In den Aktionen stehen `text`, `count` und `items`. | [![Blueprint importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FSimon-Albert%2Fha-rootine%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Frootine%2Fdaily_reminder.yaml) |
+| **Pflanzenbericht per Sprachausgabe** | Liest zur Uhrzeit vor, was ansteht. | [![Blueprint importieren](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FSimon-Albert%2Fha-rootine%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Frootine%2Fspoken_report.yaml) |
 
 ## Fotos aufräumen
 

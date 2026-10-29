@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0
+
+- **Karte:** Feuchte-Balken mit Gieß-Schwelle, farbiger Statusrand, Zusammenfassung im Kopf („1 überfällig · 2 heute“),
+  Diagramm mit automatischem Wertebereich, Datum und Uhrzeit in der Sprache des Nutzers, bessere Lesbarkeit.
+- **Blueprints:** „Tägliche Pflege-Erinnerung“ und „Pflanzenbericht per Sprachausgabe“, importierbar mit einem Klick.
+- **Formulare:** Hilfetexte zu den wichtigsten Feldern (Regen, Sensoren, Gieß-Schwelle, Grenzwerte).
+- README mit Screenshots und Schnellinstallation.
+
 ## 1.0.0
 
 - **OpenPlantbook** (optional): Art suchen, Steckbrief vorbefüllen, verknüpfen, neu laden, lösen. Eigene Änderungen

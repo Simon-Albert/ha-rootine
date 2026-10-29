@@ -5,7 +5,7 @@
  *         entity: sensor.<plant>_care_status     # one plant
  *         mode: overview                          # or: all plants
  */
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 
 const T = {
   de: {
@@ -90,28 +90,38 @@ function markdown(text) {
 
 const STYLE = `
 :host { display: block; }
+ha-card { display: block; }
 ha-card { padding: 12px; overflow: hidden; background: var(--ha-card-background, var(--card-background-color));
   backdrop-filter: blur(var(--ha-card-backdrop-blur, 12px)); }
-.head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 10px; }
+.head .summary { flex: 1; }
 .head h2 { margin: 0; font-size: 1.1em; font-weight: 600; }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px; }
-.plant { display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 14px;
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 10px; }
+.plant { --accent: var(--primary-color); position: relative; display: flex; flex-direction: column; gap: 8px; padding: 12px 12px 10px 16px; border-radius: 16px; overflow: hidden;
+  transition: transform .15s ease, box-shadow .15s ease;
   background: color-mix(in srgb, var(--primary-text-color) 5%, transparent);
   border: 1px solid color-mix(in srgb, var(--primary-text-color) 10%, transparent); }
+.plant::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--accent); }
+.plant:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+.summary { display: flex; gap: 6px; flex-wrap: wrap; }
+.bar { position: relative; height: 8px; border-radius: 6px; background: color-mix(in srgb, var(--primary-text-color) 12%, transparent); }
+.bar .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 6px; background: var(--accent); transition: width .4s ease; }
+.bar .mark { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--primary-text-color); opacity: .75; border-radius: 1px; }
+.barlabel { display: flex; justify-content: space-between; font-size: .78em; color: var(--secondary-text-color); margin-top: 2px; }
 .top { display: flex; gap: 10px; align-items: center; }
 .pic { width: 56px; height: 56px; border-radius: 12px; object-fit: cover; flex: none;
   background: color-mix(in srgb, var(--primary-text-color) 10%, transparent);
   display: flex; align-items: center; justify-content: center; font-size: 28px; }
 .title { flex: 1; min-width: 0; }
 .name { font-weight: 600; font-size: 1.05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sub { color: var(--secondary-text-color); font-size: .85em; white-space: nowrap; overflow: hidden;
-  text-overflow: ellipsis; }
+.sub { color: var(--secondary-text-color); font-size: .85em; display: -webkit-box; -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden; }
 .chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px;
   font-size: .8em; font-weight: 600; color: #fff; white-space: nowrap; }
 .tasks { display: flex; flex-direction: column; gap: 4px; }
 .task { display: flex; align-items: center; gap: 8px; font-size: .92em; }
-.task .label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.task .when { color: var(--secondary-text-color); font-size: .85em; }
+.task .label { flex: 1; min-width: 3.5em; }
+.task .when { color: var(--secondary-text-color); font-size: .85em; white-space: nowrap; }
 button, select, input, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; border: 1px solid color-mix(in srgb, var(--primary-text-color) 20%, transparent);
   background: color-mix(in srgb, var(--primary-color) 14%, transparent); border-radius: 10px;
@@ -121,7 +131,7 @@ button.ghost { background: transparent; }
 .warn { display: flex; flex-wrap: wrap; gap: 4px; }
 .actions { display: flex; gap: 6px; justify-content: flex-end; }
 .muted { color: var(--secondary-text-color); }
-svg.chart { width: 100%; height: 110px; display: block; }
+svg.chart { width: 100%; height: 130px; display: block; }
 .legend { display: flex; gap: 12px; font-size: .8em; color: var(--secondary-text-color); }
 .overlay { position: fixed; inset: 0; z-index: 9; background: rgba(0,0,0,.5); display: flex;
   align-items: center; justify-content: center; padding: 12px; }
@@ -202,8 +212,11 @@ class RootineCard extends HTMLElement {
     const body = plants.length
       ? `<div class="grid">${plants.map((p) => this._plantHtml(p)).join("")}</div>`
       : `<div class="muted" style="padding:8px">${all.length ? t.none : t.noEntity}</div>`;
+    const counts = RANK.slice(0, 6).map((k) => [k, all.filter((p) => p.state === k).length]).filter(([, n]) => n);
+    const summary = overview && counts.length
+      ? `<div class="summary">${counts.map(([k, n]) => `<span class="chip" style="background:${COLORS[k]}">${n} · ${esc(t.status[k])}</span>`).join("")}</div>` : "";
     const head = overview
-      ? `<div class="head"><h2>${t.overview}</h2><div class="actions">
+      ? `<div class="head"><h2>${t.overview}</h2>${summary}<div class="actions">
            <button class="${this._filter === "needs" ? "" : "ghost"}" data-filter="needs">${t.needs}</button>
            <button class="${this._filter === "all" ? "" : "ghost"}" data-filter="all">${t.all}</button></div></div>`
       : "";
@@ -228,9 +241,13 @@ class RootineCard extends HTMLElement {
       return `<div class="task">${this._chip(task.status)}<span class="label">${esc(task.name)}</span>
         <span class="when">${esc(when)}</span><button data-done="${esc(key)}" data-plant="${esc(p.id)}">${esc(verb)}</button></div>`;
     }).join("");
-    return `<div class="plant"><div class="top">${pic}<div class="title"><div class="name">${esc(p.name)}</div>
+    const m = a.moisture;
+    const bar = m && m.value != null
+      ? `<div><div class="bar"><div class="fill" style="width:${Math.max(0, Math.min(100, m.value))}%"></div>${m.threshold != null ? `<div class="mark" style="left:${m.threshold}%" title="${esc(t.threshold)} ${m.threshold} %"></div>` : ""}</div>
+         <div class="barlabel"><span>${esc(t.eval)} ${Math.round(m.value)} %</span><span>${m.threshold != null ? `${esc(t.threshold)} ${m.threshold} %` : ""}</span></div></div>` : "";
+    return `<div class="plant" style="--accent:${COLORS[p.state] || COLORS.unknown}"><div class="top">${pic}<div class="title"><div class="name">${esc(p.name)}</div>
       <div class="sub">${esc(sub || "")} · ${esc(t[a.location] || a.location)}</div></div>${this._chip(p.state)}</div>
-      ${warns ? `<div class="warn">${warns}</div>` : ""}<div class="tasks">${tasks}</div>
+      ${warns ? `<div class="warn">${warns}</div>` : ""}${bar}<div class="tasks">${tasks}</div>
       <div class="actions"><button class="ghost" data-details="${esc(p.id)}">${t.details}</button></div></div>`;
   }
 
@@ -286,22 +303,31 @@ class RootineCard extends HTMLElement {
   }
 
   _chartSvg(chart) {
-    const t = this._t, W = 600, H = 110, L = 28, R = 6, TOP = 6, B = 16;
+    const t = this._t, W = 600, H = 120, L = 30, R = 6, TOP = 8, B = 18;
+    const raw = this._series(chart.raw), ev = this._series(chart.eval);
+    const values = [...raw, ...ev].map(([, v]) => v);
+    if (chart.threshold != null) values.push(chart.threshold);
+    const lo = Math.max(0, Math.floor((Math.min(...values) - 5) / 10) * 10);
+    const hi = Math.min(100, Math.ceil((Math.max(...values) + 5) / 10) * 10);
+    const span = Math.max(20, hi - lo);
     const x = (d) => L + ((d - chart.start) / (chart.end - chart.start)) * (W - L - R);
-    const y = (v) => TOP + (1 - v / 100) * (H - TOP - B);
+    const y = (v) => TOP + (1 - (v - lo) / span) * (H - TOP - B);
     const line = (pts, color, dash) => {
       if (!pts.length) return "";
       let dpath = `M${x(pts[0][0]).toFixed(1)},${y(pts[0][1]).toFixed(1)}`;
       for (const [dt, v] of pts.slice(1)) dpath += ` H${x(dt).toFixed(1)} V${y(v).toFixed(1)}`;
       dpath += ` H${x(chart.end).toFixed(1)}`;
-      return `<path d="${dpath}" fill="none" stroke="${color}" stroke-width="1.6" ${dash ? 'stroke-dasharray="4 3"' : ""}/>`;
+      return `<path d="${dpath}" fill="none" stroke="${color}" stroke-width="1.8" ${dash ? 'stroke-dasharray="4 3"' : ""}/>`;
     };
-    const raw = this._series(chart.raw), ev = this._series(chart.eval);
-    const grid = [0, 25, 50, 75, 100].map((v) => `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="currentColor" opacity=".12"/>
+    const step = span <= 30 ? 10 : span <= 60 ? 20 : 25;
+    const marks = [];
+    for (let v = Math.ceil(lo / step) * step; v <= lo + span; v += step) marks.push(v);
+    const grid = marks.map((v) => `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="currentColor" opacity=".12"/>
       <text x="${L - 4}" y="${y(v) + 3}" text-anchor="end" font-size="9" fill="currentColor" opacity=".7">${v}</text>`).join("");
+    const lang = this._hass.language || undefined;
     const ticks = [0, 12, 24, 36, 48].map((h) => {
       const dt = new Date(chart.start.getTime() + h * 3600e3);
-      return `<text x="${x(dt)}" y="${H - 3}" text-anchor="middle" font-size="9" fill="currentColor" opacity=".7">${dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</text>`;
+      return `<text x="${x(dt)}" y="${H - 4}" text-anchor="${h === 0 ? "start" : h === 48 ? "end" : "middle"}" font-size="9" fill="currentColor" opacity=".7">${dt.toLocaleTimeString(lang, { hour: "2-digit", minute: "2-digit" })}</text>`;
     }).join("");
     const thr = chart.threshold != null ? `<line x1="${L}" x2="${W - R}" y1="${y(chart.threshold)}" y2="${y(chart.threshold)}" stroke="#ef4444" stroke-dasharray="3 3"/>` : "";
     return `<div class="muted">${t.chart}</div><svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" data-chart>${grid}${ticks}${thr}
@@ -322,7 +348,7 @@ class RootineCard extends HTMLElement {
       const multi = f.startsWith("care.") || f === "notes";
       return `<label>${esc(t.fields[f])}</label>${multi ? `<textarea name="${f}" rows="3">${esc(p[f] ?? "")}</textarea>` : `<input name="${f}" value="${esc(p[f] ?? "")}">`}`;
     }).join("")}<span></span><div class="actions"><button type="button" class="ghost" data-cancel>${t.cancel}</button><button type="submit">${t.save}</button></div></form>`;
-    const log = d.history.map((e) => `<div class="${e.undone ? "u" : ""}"><span class="t">${esc(new Date(e.ts).toLocaleString())} · ${esc(a.tasks[e.task]?.name || e.task)} · ${esc(t.sources[e.source] || e.source)}${e.note ? ` · ${esc(e.note)}` : ""}</span>${e.undone ? `<span class="muted">${t.undone}</span>` : `<button class="ghost" data-undo="${esc(e.id)}">${t.undo}</button>`}</div>`).join("");
+    const log = d.history.map((e) => `<div class="${e.undone ? "u" : ""}"><span class="t">${esc(new Date(e.ts).toLocaleString(this._hass.language))} · ${esc(a.tasks[e.task]?.name || e.task)} · ${esc(t.sources[e.source] || e.source)}${e.note ? ` · ${esc(e.note)}` : ""}</span>${e.undone ? `<span class="muted">${t.undone}</span>` : `<button class="ghost" data-undo="${esc(e.id)}">${t.undo}</button>`}</div>`).join("");
     const locSelect = this._siblings(d.id).find((e) => e.startsWith("select.") && this._hass.states[e]);
     return `<div class="overlay" data-overlay><div class="dialog">
       <div class="top">${pic}<div class="title"><div class="name" style="font-size:1.2em">${esc(name)}</div><div class="sub">${esc([p.common_name, p.species].filter(Boolean).join(" · "))}</div></div>${this._chip(st.state)}
@@ -397,7 +423,7 @@ class RootineCard extends HTMLElement {
       const time = new Date(chart.start.getTime() + frac * (chart.end - chart.start));
       const r = at(raw, time), v = at(ev, time);
       tip = tip || Object.assign(document.createElement("div"), { className: "tip" });
-      tip.textContent = `${time.toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" })} · ${this._t.raw} ${r ?? "–"} % · ${this._t.eval} ${v == null ? "–" : Math.round(v)} %`;
+      tip.textContent = `${time.toLocaleString(this._hass.language, { weekday: "short", hour: "2-digit", minute: "2-digit" })} · ${this._t.raw} ${r ?? "–"} % · ${this._t.eval} ${v == null ? "–" : Math.round(v)} %`;
       tip.style.left = `${e.clientX + 10}px`; tip.style.top = `${e.clientY - 28}px`;
       this.shadowRoot.appendChild(tip);
     });

@@ -10,6 +10,13 @@
           "default_location": "Standard-Standort neuer Pflanzen",
           "weather_entity": "Wetter (Vorhersage)",
           "outdoor_temp_entity": "Außentemperatur"
+        },
+        "data_description": {
+          "rain_entity": "Sensor mit der Regen-Tagessumme in mm. Wird für den Regen-Modus gebraucht.",
+          "rain_threshold": "Ab so viel Regen seit dem letzten Gießen gilt die Pflanze als gegossen (Standard 5 mm). Jede Pflanze kann einen eigenen Wert haben.",
+          "weather_entity": "Liefert die Vorhersage für Frost- und Hitzewarnungen (wird stündlich abgefragt).",
+          "outdoor_temp_entity": "Außentemperatur für Pflanzen ohne eigenen Temperatursensor. Nur sie löst Hitzewarnungen aus.",
+          "default_location": "Vorauswahl für neue Pflanzen. Jede Pflanze kann später umgestellt werden."
         }
       }
     },
@@ -27,6 +34,13 @@
           "default_location": "Standard-Standort neuer Pflanzen",
           "weather_entity": "Wetter (Vorhersage)",
           "outdoor_temp_entity": "Außentemperatur"
+        },
+        "data_description": {
+          "rain_entity": "Sensor mit der Regen-Tagessumme in mm. Wird für den Regen-Modus gebraucht.",
+          "rain_threshold": "Ab so viel Regen seit dem letzten Gießen gilt die Pflanze als gegossen (Standard 5 mm). Jede Pflanze kann einen eigenen Wert haben.",
+          "weather_entity": "Liefert die Vorhersage für Frost- und Hitzewarnungen (wird stündlich abgefragt).",
+          "outdoor_temp_entity": "Außentemperatur für Pflanzen ohne eigenen Temperatursensor. Nur sie löst Hitzewarnungen aus.",
+          "default_location": "Vorauswahl für neue Pflanzen. Jede Pflanze kann später umgestellt werden."
         }
       }
     }
@@ -45,6 +59,9 @@
             "name": "Name",
             "location": "Standort",
             "search": "Art bei OpenPlantbook suchen (optional)"
+          },
+          "data_description": {
+            "search": "Optional. Füllt den Steckbrief vor, alles bleibt änderbar. Leer lassen = von Hand."
           }
         },
         "profile": {
@@ -76,6 +93,14 @@
             "moisture_threshold": "Gieß-Schwelle (%)",
             "moisture_method": "Bewertung der Feuchte",
             "valve_counts_as_watering": "Ventillauf zählt als gegossen"
+          },
+          "data_description": {
+            "mode": "Nach Plan: feste Intervalle. Plan + Regen: Regen zählt als Gießen. Nach Sensor: der Bodenfeuchte-Sensor entscheidet.",
+            "schedule_text": "Eine Zeile pro Zeitraum, z. B. 01.03.–31.10.: 6. Leer = kein fester Plan (bei Sensor: kein „spätestens“).",
+            "moisture_threshold": "Fällt die bewertete Feuchte darunter, ist Gießen fällig. Die Skala hängt von deinem Sensor ab.",
+            "moisture_method": "Median über 24 Stunden glättet den Tagesgang (Sonne) und ist fast immer die beste Wahl.",
+            "valve_counts_as_watering": "Aus bei Sensor-Pflanzen: dann entscheidet der Sensor, das Ventil dient nur zur Einordnung.",
+            "last_done": "Damit der Plan weiß, wo er anfängt."
           }
         },
         "fertilize": {
@@ -143,6 +168,13 @@
             "moisture_threshold": "Gieß-Schwelle (%)",
             "moisture_method": "Bewertung der Feuchte",
             "valve_counts_as_watering": "Ventillauf zählt als gegossen"
+          },
+          "data_description": {
+            "mode": "Nach Plan: feste Intervalle. Plan + Regen: Regen zählt als Gießen. Nach Sensor: der Bodenfeuchte-Sensor entscheidet.",
+            "schedule_text": "Eine Zeile pro Zeitraum, z. B. 01.03.–31.10.: 6. Leer = kein fester Plan (bei Sensor: kein „spätestens“).",
+            "moisture_threshold": "Fällt die bewertete Feuchte darunter, ist Gießen fällig. Die Skala hängt von deinem Sensor ab.",
+            "moisture_method": "Median über 24 Stunden glättet den Tagesgang (Sonne) und ist fast immer die beste Wahl.",
+            "valve_counts_as_watering": "Aus bei Sensor-Pflanzen: dann entscheidet der Sensor, das Ventil dient nur zur Einordnung."
           }
         },
         "fertilize_edit": {
@@ -173,6 +205,12 @@
             "temperature_entity": "Temperatursensor",
             "battery_entity": "Batterie",
             "valve_entity": "Bewässerungsventil"
+          },
+          "data_description": {
+            "moisture_entity": "Mit Feuchtesensor sind Modus „Nach Sensor“, „Zu nass“ und die Erkennung von Gießen möglich.",
+            "temperature_entity": "Für die Kälteschutz-Warnung. Hitze wird nie aus diesem Sensor abgeleitet.",
+            "battery_entity": "Warnt unter 15 %.",
+            "valve_entity": "Rootine liest das Ventil nur, es schaltet es nie."
           }
         },
         "sensors_edit": {
@@ -182,6 +220,9 @@
             "temperature_entity": "Temperatursensor",
             "battery_entity": "Batterie",
             "valve_entity": "Bewässerungsventil"
+          },
+          "data_description": {
+            "moisture_entity": "Feuchtesensor der Pflanze."
           }
         },
         "limits": {
@@ -192,6 +233,12 @@
             "temp_max": "Hitzeschutz ab (°C)",
             "moisture_max": "Zu nass ab (%)",
             "rain_threshold": "Eigene Regenschwelle (mm)"
+          },
+          "data_description": {
+            "temp_min": "Darunter wird „Schutz nötig“ gemeldet (z. B. 5 °C zum Reinholen).",
+            "temp_max": "Darüber wird „Schutz nötig“ gemeldet, nur aus Vorhersage oder Außensensor.",
+            "moisture_max": "Hält die Feuchte 48 Stunden lang so hoch, kommt „Zu nass“ (Staunässe).",
+            "rain_threshold": "Überschreibt die globale Regenschwelle für diese Pflanze."
           }
         },
         "limits_edit": {
@@ -202,6 +249,12 @@
             "temp_max": "Hitzeschutz ab (°C)",
             "moisture_max": "Zu nass ab (%)",
             "rain_threshold": "Eigene Regenschwelle (mm)"
+          },
+          "data_description": {
+            "temp_min": "Leeres Feld = aus.",
+            "temp_max": "Leeres Feld = aus.",
+            "moisture_max": "Leeres Feld = aus.",
+            "rain_threshold": "Leeres Feld = globaler Wert."
           }
         },
         "openplantbook": {

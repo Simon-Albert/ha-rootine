@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 DOMAIN = "rootine"
-VERSION = "1.0.0"  # keep in sync with manifest.json
+VERSION = "1.1.0"  # keep in sync with manifest.json
 SUBENTRY_PLANT = "plant"
 
 # Haupteintrag (Optionen)

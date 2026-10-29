@@ -84,6 +84,14 @@ class CareStatusSensor(RootinePlantEntity, SensorEntity):
             "profile": profile,
             "tasks": tasks,
             "warnings": [{"key": key, **info} for key, info in plant.warnings.items()],
+            "moisture": {
+                "value": plant.moisture_value,
+                "raw": plant.raw_moisture,
+                "threshold": plant.settings.moisture_threshold,
+                "max": plant.settings.moisture_max,
+            }
+            if plant.moisture_entity
+            else None,
             "log": list(reversed(plant.log[-10:])),
         }
 
