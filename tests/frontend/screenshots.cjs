@@ -9,7 +9,7 @@ const leaf = (a, b) => `data:image/svg+xml;utf8,${encodeURIComponent(
 const plant = (name, state, location, profile, tasks, extra = {}) => ({
   state,
   attributes: { friendly_name: `${name} Pflegestatus`, entity_picture: leaf(...extra.colors), location, profile,
-    tasks, warnings: extra.warnings || [], moisture: extra.moisture || null },
+    tasks, oneoffs: extra.oneoffs || [], warnings: extra.warnings || [], moisture: extra.moisture || null },
 });
 
 const states = {
@@ -27,7 +27,7 @@ const states = {
   "sensor.kaffee_care_status": plant("Kaffee", "ok", "indoor",
     { common_name: "Kaffeestrauch", species: "Coffea arabica" },
     { water: { name: "Gießen", status: "ok", days: 4 }, fertilize: { name: "Düngen", status: "ok", days: 15 }, milben: { name: "Spinnmilben-Check", status: "ok", days: 6 } },
-    { colors: ["#00897b", "#004d40"] }),
+    { colors: ["#00897b", "#004d40"], oneoffs: [{ id: "once_demo", name: "Umtopfen", due: "2026-11-03", yearly: true, remind_days: 7, status: "soon", days: 5 }] }),
   "sensor.zitrus_moisture": { state: "47", attributes: { source_entity: "sensor.raw", threshold: 50 } },
   "sensor.raw": { state: "44", attributes: {} },
 };
@@ -67,6 +67,25 @@ const states = {
     await page.setViewportSize({ width: 980, height: 900 });
     await page.screenshot({ path: path.join(out, `card-detail-${theme}.png`) });
     await page.close();
+
+    // compact layout at phone width, then the "all watered" confirmation
+    const phone = await browser.newPage({ viewport: { width: 390, height: 520 }, deviceScaleFactor: 2 });
+    await phone.setContent(`<body style="margin:0;padding:12px;font-family:system-ui,sans-serif;${css}"></body>`);
+    await phone.addScriptTag({ path: path.join(__dirname, "../../custom_components/rootine/frontend/rootine-card.js") });
+    await phone.evaluate((states) => {
+      const card = document.createElement("rootine-card");
+      card.setConfig({ mode: "overview", layout: "compact" });
+      card._filter = "all";
+      card.hass = { language: "de", states, entities: {}, callService: async () => {}, callWS: async () => ({ response: { items: [] } }) };
+      document.body.appendChild(card);
+      window.__card = card;
+    }, states);
+    await phone.waitForTimeout(150);
+    await phone.screenshot({ path: path.join(out, `card-compact-${theme}.png`) });
+    await phone.evaluate(() => window.__card.shadowRoot.querySelector("[data-allwater]").click());
+    await phone.waitForTimeout(100);
+    await phone.screenshot({ path: path.join(out, `card-allwater-${theme}.png`) });
+    await phone.close();
   }
   await browser.close();
   console.log("screenshots written");

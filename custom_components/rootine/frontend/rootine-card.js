@@ -4,8 +4,9 @@
  * Usage:  type: custom:rootine-card
  *         entity: sensor.<plant>_care_status     # one plant
  *         mode: overview                          # or: all plants
+ *         layout: compact                         # optional: one row per plant (phones)
  */
-const VERSION = "1.1.1";
+const VERSION = "1.2.0";
 
 const T = {
   de: {
@@ -31,6 +32,10 @@ const T = {
       valve: "Ventil", rain: "Regen", setup: "Einrichtung" },
     noEntity: "Bitte eine Pflanze (entity) oder mode: overview angeben.",
     uploadFailed: "Das Foto konnte nicht hochgeladen werden.",
+    allWater: "Alles gegossen", allWaterTitle: "Alles gegossen?",
+    allWaterText: (names) => `Als gegossen markieren: ${names}.`,
+    allWaterHint: "Einzeln rückgängig machen geht über den Verlauf der Pflanze.",
+    watered: (n) => (n === 1 ? "1 Pflanze als gegossen markiert." : `${n} Pflanzen als gegossen markiert.`),
   },
   en: {
     overview: "Plants", needs: "Needs care", all: "All", none: "All good.",
@@ -55,6 +60,10 @@ const T = {
       valve: "Valve", rain: "Rain", setup: "Setup" },
     noEntity: "Please set a plant (entity) or mode: overview.",
     uploadFailed: "The photo could not be uploaded.",
+    allWater: "All watered", allWaterTitle: "All watered?",
+    allWaterText: (names) => `Mark as watered: ${names}.`,
+    allWaterHint: "Each one can be undone in the plant's history.",
+    watered: (n) => (n === 1 ? "1 plant marked as watered." : `${n} plants marked as watered.`),
   },
 };
 
@@ -157,6 +166,25 @@ form.edit input, form.edit textarea, .row input, .row select { width: 100%; box-
 .log { display: flex; flex-direction: column; gap: 2px; font-size: .88em; max-height: 180px; overflow: auto; }
 .log div { display: flex; gap: 8px; align-items: center; } .log .u { text-decoration: line-through; opacity: .6; }
 .log span.t { flex: 1; }
+.list { display: flex; flex-direction: column; gap: 6px; }
+.prow { --accent: var(--primary-color); display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 10px;
+  align-items: center; padding: 6px 8px 6px 10px; border-radius: 12px; cursor: pointer; min-width: 0;
+  background: color-mix(in srgb, var(--primary-text-color) 5%, transparent); border-left: 4px solid var(--accent); }
+.prow:hover { background: color-mix(in srgb, var(--primary-text-color) 9%, transparent); }
+.prow:focus-visible { outline: 2px solid var(--primary-color); outline-offset: 1px; }
+.prow .info { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.prow .line { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.prow .line .name { min-width: 0; }
+.prow .line .chip { flex: none; font-size: .72em; }
+.prow .next { min-width: 0; font-size: .85em; color: var(--secondary-text-color); overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; }
+.head .actions { flex-wrap: wrap; } .head .actions button { white-space: nowrap; }
+ha-card.compact .head .actions { width: 100%; justify-content: flex-start; }
+ha-card.compact .head .actions button { padding: 3px 8px; font-size: .9em; }
+.prow button { white-space: nowrap; }
+.thumb { width: 40px; height: 40px; border-radius: 10px; object-fit: cover; display: flex; align-items: center;
+  justify-content: center; font-size: 20px; background: color-mix(in srgb, var(--primary-text-color) 10%, transparent); }
+.confirm { width: min(420px, 100%); }
 .tip { position: fixed; pointer-events: none; z-index: 10; padding: 3px 8px; border-radius: 8px; font-size: .8em;
   background: var(--primary-text-color); color: var(--card-background-color); }
 `;
@@ -175,10 +203,13 @@ class RootineCard extends HTMLElement {
     this._config = config;
   }
 
-  getCardSize() { return this._config?.mode === "overview" ? 6 : 3; }
+  get _compact() { return this._config?.layout === "compact"; }
+
+  getCardSize() { return this._compact ? 3 : this._config?.mode === "overview" ? 6 : 3; }
 
   /** Size in sections dashboards. */
   getGridOptions() {
+    if (this._compact) return { columns: 6, min_columns: 3 };
     return this._config?.mode === "overview"
       ? { columns: "full", min_columns: 6 }
       : { columns: 6, min_columns: 4 };
@@ -193,8 +224,9 @@ class RootineCard extends HTMLElement {
   set hass(hass) {
     this._hass = hass;
     this._t = T[(hass.language || "en").startsWith("de") ? "de" : "en"];
-    if (this._dialog) return; // do not re-render while the dialog is open (keeps form input)
-    const key = JSON.stringify(this._plants().map((p) => [p.id, p.state, p.attrs.tasks, p.attrs.warnings, p.attrs.location, p.attrs.entity_picture]))
+    // do not re-render while a dialog is open (keeps form input and the confirmed list)
+    if (this._dialog || this._confirm) return;
+    const key = JSON.stringify(this._plants().map((p) => [p.id, p.state, p.attrs.tasks, p.attrs.oneoffs, p.attrs.warnings, p.attrs.location, p.attrs.entity_picture]))
       + this._filter;
     if (key !== this._rendered) { this._rendered = key; this._render(); }
   }
@@ -236,20 +268,84 @@ class RootineCard extends HTMLElement {
     let plants = this._plants();
     if (overview && this._filter === "needs") plants = plants.filter((p) => !["ok", "rest", "unknown"].includes(p.state));
     const all = this._plants();
-    const body = plants.length
-      ? `<div class="grid">${plants.map((p) => this._plantHtml(p)).join("")}</div>`
-      : `<div class="muted" style="padding:8px">${all.length ? t.none : t.noEntity}</div>`;
+    const body = !plants.length
+      ? `<div class="muted" style="padding:8px">${all.length ? t.none : t.noEntity}</div>`
+      : this._compact
+        ? `<div class="list">${plants.map((p) => this._rowHtml(p)).join("")}</div>`
+        : `<div class="grid">${plants.map((p) => this._plantHtml(p)).join("")}</div>`;
+    const thirsty = this._waterDue(all);
     const counts = RANK.slice(0, 6).map((k) => [k, all.filter((p) => p.state === k).length]).filter(([, n]) => n);
     const summary = overview && counts.length
       ? `<div class="summary">${counts.map(([k, n]) => `<span class="chip" style="background:${COLORS[k]}">${n} · ${esc(t.status[k])}</span>`).join("")}</div>` : "";
     const head = overview
       ? `<div class="head"><h2>${t.overview}</h2>${summary}<div class="actions">
+           ${thirsty.length ? `<button data-allwater>💧 ${t.allWater}</button>` : ""}
            <button class="${this._filter === "needs" ? "" : "ghost"}" data-filter="needs">${t.needs}</button>
            <button class="${this._filter === "all" ? "" : "ghost"}" data-filter="all">${t.all}</button></div></div>`
       : "";
-    this.shadowRoot.innerHTML = `<style>${STYLE}</style><ha-card>${head}${body}</ha-card>${this._dialog ? this._dialogHtml() : ""}`;
+    this.shadowRoot.innerHTML = `<style>${STYLE}</style><ha-card class="${this._compact ? "compact" : ""}">${head}${body}</ha-card>${this._dialog ? this._dialogHtml() : ""}${this._confirm ? this._confirmHtml() : ""}`;
     this._bind();
     if (this._dialog) this._afterDialog();
+    if (this._confirm) this._afterConfirm();
+  }
+
+  /** Tasks and one-time tasks of a plant, in one list. */
+  _items(a) {
+    const tasks = Object.entries(a.tasks || {}).map(([key, task]) => ({ key, name: task.name, status: task.status, days: task.days }));
+    const once = (a.oneoffs || []).map((o) => ({ key: o.id, name: o.name, status: o.status, days: o.days, oneoff: true }));
+    return [...tasks, ...once];
+  }
+
+  /** Most urgent first; among equals the one due earliest. */
+  _urgent(items) {
+    const rank = (i) => RANK.indexOf(i.status) * 1000 + (i.days ?? 999);
+    return [...items].sort((x, y) => rank(x) - rank(y))[0];
+  }
+
+  _verb(item) {
+    const t = this._t;
+    return item.key === "water" && !item.oneoff ? t.water : item.key === "fertilize" && !item.oneoff ? t.fertilize : t.done;
+  }
+
+  _when(item) {
+    return item.days === null || item.days === undefined ? "" : this._t.days(item.days);
+  }
+
+  /** Plants whose watering is due or overdue (for "all watered"). */
+  _waterDue(plants) {
+    return plants.filter((p) => ["due", "overdue"].includes(p.attrs.tasks?.water?.status));
+  }
+
+  _rowHtml(p) {
+    const a = p.attrs, next = this._urgent(this._items(a));
+    const pic = a.entity_picture ? `<img class="thumb" src="${esc(a.entity_picture)}" alt="">` : `<div class="thumb">🌱</div>`;
+    const line = next ? `${next.name}${this._when(next) ? ` · ${this._when(next)}` : ""}` : "";
+    const button = next ? `<button data-done="${esc(next.key)}" data-plant="${esc(p.id)}">${esc(this._verb(next))}</button>` : "<span></span>";
+    return `<div class="prow" data-row="${esc(p.id)}" role="button" tabindex="0" style="--accent:${COLORS[p.state] || COLORS.unknown}">${pic}
+      <div class="info"><div class="line"><div class="name">${esc(p.name)}</div>${this._chip(p.state)}</div><div class="next">${esc(line)}</div></div>
+      ${button}</div>`;
+  }
+
+  _confirmHtml() {
+    const t = this._t, c = this._confirm;
+    return `<div class="overlay" data-confirm-overlay><div class="dialog confirm" data-confirm role="alertdialog">
+      <h3>${esc(t.allWaterTitle)}</h3><div>${esc(t.allWaterText(c.names.join(", ")))}</div><div class="muted">${esc(t.allWaterHint)}</div>
+      <div class="actions"><button class="ghost" data-confirm-cancel>${t.cancel}</button><button data-confirm-ok>💧 ${t.water}</button></div></div></div>`;
+  }
+
+  _afterConfirm() {
+    const root = this.shadowRoot;
+    const close = () => { this._confirm = null; this._rendered = ""; this._render(); };
+    root.querySelector("[data-confirm-cancel]")?.addEventListener("click", close);
+    root.querySelector("[data-confirm-overlay]")?.addEventListener("click", (e) => { if (e.target.dataset.confirmOverlay !== undefined) close(); });
+    root.querySelector("[data-confirm-ok]")?.addEventListener("click", async (e) => {
+      e.target.disabled = true;
+      const ids = this._confirm.ids;
+      let done = 0;
+      for (const id of ids) if (await this._call("rootine", "mark_done", { entity_id: id, task: "water" })) done += 1;
+      close();
+      if (done) this._toast(this._t.watered(done));
+    });
   }
 
   _chip(status) {
@@ -262,12 +358,8 @@ class RootineCard extends HTMLElement {
     const sub = [a.profile.common_name, a.profile.cultivar && `'${a.profile.cultivar}'`].filter(Boolean).join(" ");
     const warns = (a.warnings || []).map((w) =>
       `<span class="chip" style="background:${COLORS[w.key === "sensor_check" ? "check_sensor" : w.key]}" title="${esc(t.reason[w.reason] || "")}">${esc(t.warn[w.key])}${w.reason ? ` · ${esc(t.reason[w.reason] || w.reason)}` : ""}</span>`).join("");
-    const tasks = Object.entries(a.tasks).map(([key, task]) => {
-      const verb = key === "water" ? t.water : key === "fertilize" ? t.fertilize : t.done;
-      const when = task.days === null || task.days === undefined ? "" : t.days(task.days);
-      return `<div class="task">${this._chip(task.status)}<span class="label">${esc(task.name)}</span>
-        <span class="when">${esc(when)}</span><button data-done="${esc(key)}" data-plant="${esc(p.id)}">${esc(verb)}</button></div>`;
-    }).join("");
+    const tasks = this._items(a).map((item) => `<div class="task">${this._chip(item.status)}<span class="label">${esc(item.name)}</span>
+        <span class="when">${esc(this._when(item))}</span><button data-done="${esc(item.key)}" data-plant="${esc(p.id)}">${esc(this._verb(item))}</button></div>`).join("");
     const m = a.moisture;
     const bar = m && m.value != null
       ? `<div><div class="bar"><div class="fill" style="width:${Math.max(0, Math.min(100, m.value))}%"></div>${m.threshold != null ? `<div class="mark" style="left:${m.threshold}%" title="${esc(t.threshold)} ${m.threshold} %"></div>` : ""}</div>
@@ -291,6 +383,15 @@ class RootineCard extends HTMLElement {
       if (ok) { b.textContent = "✓"; b.classList.add("done"); } else { b.disabled = false; }
     }));
     root.querySelectorAll("[data-details]").forEach((b) => b.addEventListener("click", () => this._open(b.dataset.details)));
+    root.querySelectorAll("[data-row]").forEach((r) => {
+      r.addEventListener("click", (e) => { if (!e.target.closest("button")) this._open(r.dataset.row); });
+      r.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target === r) this._open(r.dataset.row); });
+    });
+    root.querySelector("[data-allwater]")?.addEventListener("click", () => {
+      const plants = this._waterDue(this._plants());
+      this._confirm = { ids: plants.map((p) => p.id), names: plants.map((p) => p.name) };
+      this._render();
+    });
   }
 
   /** Call an action; show HA's toast on failure instead of failing silently. */
@@ -393,14 +494,14 @@ class RootineCard extends HTMLElement {
     const a = st.attributes, p = a.profile;
     const name = a.friendly_name?.replace(/ (Pflegestatus|Care status)$/i, "") || d.id;
     const pic = a.entity_picture ? `<img class="pic" style="width:72px;height:72px" src="${esc(a.entity_picture)}" alt="">` : `<div class="pic" style="width:72px;height:72px">🌱</div>`;
-    const taskOptions = Object.entries(a.tasks).map(([k, v]) => `<option value="${esc(k)}">${esc(v.name)}</option>`).join("");
+    const taskOptions = this._items(a).map((i) => `<option value="${esc(i.key)}">${esc(i.name)}</option>`).join("");
     const kv = (label, value, isMd) => value ? `<dt>${esc(label)}</dt><dd>${isMd ? markdown(value) : esc(value)}</dd>` : "";
     const view = `<dl class="kv">${PROFILE_FIELDS.map((f) => kv(t.fields[f], f.startsWith("care.") ? p[f] : p[f] ?? "", f.startsWith("care.") || f === "notes")).join("")}</dl>`;
     const form = `<form class="edit" data-form>${PROFILE_FIELDS.map((f) => {
       const multi = f.startsWith("care.") || f === "notes";
       return `<label>${esc(t.fields[f])}</label>${multi ? `<textarea name="${f}" rows="3">${esc(p[f] ?? "")}</textarea>` : `<input name="${f}" value="${esc(p[f] ?? "")}">`}`;
     }).join("")}<span></span><div class="actions"><button type="button" class="ghost" data-cancel>${t.cancel}</button><button type="submit">${t.save}</button></div></form>`;
-    const log = d.history.map((e) => `<div class="${e.undone ? "u" : ""}"><span class="t">${esc(new Date(e.ts).toLocaleString(this._hass.language))} · ${esc(a.tasks[e.task]?.name || e.task)} · ${esc(t.sources[e.source] || e.source)}${e.note ? ` · ${esc(e.note)}` : ""}</span>${e.undone ? `<span class="muted">${t.undone}</span>` : `<button class="ghost" data-undo="${esc(e.id)}">${t.undo}</button>`}</div>`).join("");
+    const log = d.history.map((e) => `<div class="${e.undone ? "u" : ""}"><span class="t">${esc(new Date(e.ts).toLocaleString(this._hass.language))} · ${esc(a.tasks[e.task]?.name || e.task_name || e.task)} · ${esc(t.sources[e.source] || e.source)}${e.note ? ` · ${esc(e.note)}` : ""}</span>${e.undone ? `<span class="muted">${t.undone}</span>` : `<button class="ghost" data-undo="${esc(e.id)}">${t.undo}</button>`}</div>`).join("");
     const locSelect = this._siblings(d.id).find((e) => e.startsWith("select.") && this._hass.states[e]);
     return `<div class="overlay" data-overlay><div class="dialog">
       <div class="top">${pic}<div class="title"><div class="name" style="font-size:1.2em">${esc(name)}</div><div class="sub">${esc([p.common_name, p.species].filter(Boolean).join(" · "))}</div></div>${this._chip(st.state)}
@@ -496,7 +597,7 @@ class RootineCardEditor extends HTMLElement {
     if (!this._hass || !this._config) return;
     if (!this._form) {
       this._form = document.createElement("ha-form");
-      this._form.computeLabel = (s) => ({ entity: "Pflanze / Plant", mode: "Modus / Mode" }[s.name] || s.name);
+      this._form.computeLabel = (s) => ({ entity: "Pflanze / Plant", mode: "Modus / Mode", layout: "Darstellung / Layout" }[s.name] || s.name);
       this._form.addEventListener("value-changed", (e) =>
         this.dispatchEvent(new CustomEvent("config-changed", { detail: { config: e.detail.value }, bubbles: true, composed: true })));
       this.appendChild(this._form);
@@ -506,6 +607,7 @@ class RootineCardEditor extends HTMLElement {
     this._form.schema = [
       { name: "entity", selector: { entity: { integration: "rootine", domain: "sensor" } } },
       { name: "mode", selector: { select: { options: [{ value: "overview", label: "Overview" }], mode: "dropdown", custom_value: false } } },
+      { name: "layout", selector: { select: { options: [{ value: "compact", label: "Kompakt / Compact" }], mode: "dropdown", custom_value: false } } },
     ];
   }
 }
