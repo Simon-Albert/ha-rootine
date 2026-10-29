@@ -447,6 +447,17 @@
         "name": "Heat protection above"
       }
     },
+    "switch": {
+      "temp_min_enabled": {
+        "name": "Cold protection"
+      },
+      "temp_max_enabled": {
+        "name": "Heat protection"
+      },
+      "moisture_max_enabled": {
+        "name": "Too wet warning"
+      }
+    },
     "todo": {
       "care": {
         "name": "Plant care"

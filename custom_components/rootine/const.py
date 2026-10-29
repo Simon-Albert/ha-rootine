@@ -13,6 +13,8 @@ CONF_DEFAULT_LOCATION = "default_location"
 CONF_WEATHER_ENTITY = "weather_entity"
 CONF_OUTDOOR_TEMP_ENTITY = "outdoor_temp_entity"
 DEFAULT_RAIN_THRESHOLD = 5.0
+# value a limit gets when it is switched on and no earlier value is remembered
+LIMIT_DEFAULTS: dict[str, float] = {"temp_min": 5.0, "temp_max": 32.0, "moisture_max": 85}
 
 # Pflanzen-Subentry (data)
 CONF_NAME = "name"

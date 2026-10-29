@@ -38,6 +38,7 @@ from .const import (
     CONF_WEATHER_ENTITY,
     DEFAULT_RAIN_THRESHOLD,
     EVENT_TASK_DONE,
+    LIMIT_DEFAULTS,
     LOCATION_INDOOR,
     LOCATION_OUTDOOR,
     LOG_LIMIT,
@@ -913,6 +914,27 @@ class RootineManager:
             setattr(plant.settings, name, value)
         self._notify(plant)
 
+    async def async_set_limit(self, subentry_id: str, key: str, value: float | None) -> None:
+        """Set a limit (None switches it off); a limit that was off may need a forecast."""
+        plant = self.plants[subentry_id]
+        setattr(plant.settings, key, value)
+        if value is not None:
+            plant.settings.limit_memory.pop(key, None)
+            if not self._forecast:
+                await self._fetch_forecast()
+        self._notify(plant)
+
+    async def async_switch_limit(self, subentry_id: str, key: str, on: bool) -> None:
+        """Switch a limit off (its value is remembered) or on again."""
+        settings = self.plants[subentry_id].settings
+        current = getattr(settings, key)
+        if on and current is None:
+            value = settings.limit_memory.get(key, LIMIT_DEFAULTS[key])
+            await self.async_set_limit(subentry_id, key, value)
+        elif not on and current is not None:
+            settings.limit_memory[key] = current
+            await self.async_set_limit(subentry_id, key, None)
+
     @callback
     def set_profile(self, subentry_id: str, profile: Profile) -> None:
         plant = self.plants[subentry_id]
@@ -931,12 +953,15 @@ class RootineManager:
                 f"{sid}_protect",
                 f"{sid}_temp_min",
                 f"{sid}_temp_max",
+                f"{sid}_temp_min_enabled",
+                f"{sid}_temp_max_enabled",
             }
             if plant.moisture_entity:
                 ids |= {
                     f"{sid}_moisture_eval",
                     f"{sid}_moisture_threshold",
                     f"{sid}_moisture_max",
+                    f"{sid}_moisture_max_enabled",
                     f"{sid}_too_wet",
                     f"{sid}_sensor_check",
                     f"{sid}_sensor_checked",

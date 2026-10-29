@@ -84,6 +84,26 @@
         "default": "mdi:thermometer-high"
       }
     },
+    "switch": {
+      "temp_min_enabled": {
+        "default": "mdi:snowflake-thermometer",
+        "state": {
+          "off": "mdi:snowflake-off"
+        }
+      },
+      "temp_max_enabled": {
+        "default": "mdi:sun-thermometer",
+        "state": {
+          "off": "mdi:thermometer-off"
+        }
+      },
+      "moisture_max_enabled": {
+        "default": "mdi:water-alert",
+        "state": {
+          "off": "mdi:water-off"
+        }
+      }
+    },
     "todo": {
       "care": {
         "default": "mdi:sprout"

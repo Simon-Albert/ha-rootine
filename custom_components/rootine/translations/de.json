@@ -447,6 +447,17 @@
         "name": "Hitzeschutz ab"
       }
     },
+    "switch": {
+      "temp_min_enabled": {
+        "name": "Kälteschutz"
+      },
+      "temp_max_enabled": {
+        "name": "Hitzeschutz"
+      },
+      "moisture_max_enabled": {
+        "name": "Nässewarnung"
+      }
+    },
     "todo": {
       "care": {
         "name": "Pflanzenpflege"

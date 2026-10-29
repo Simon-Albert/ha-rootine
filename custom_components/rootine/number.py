@@ -20,13 +20,14 @@ class LimitDescription:
     percent: bool
     config: bool
     needs_sensor: bool
+    switchable: bool  # has a switch to turn the limit off (switch.py)
 
 
 LIMITS = (
-    LimitDescription("moisture_threshold", True, False, True),
-    LimitDescription("moisture_max", True, True, True),
-    LimitDescription("temp_min", False, True, False),
-    LimitDescription("temp_max", False, True, False),
+    LimitDescription("moisture_threshold", True, False, True, False),
+    LimitDescription("moisture_max", True, True, True, True),
+    LimitDescription("temp_min", False, True, False, True),
+    LimitDescription("temp_max", False, True, False, True),
 )
 
 
@@ -75,4 +76,4 @@ class LimitNumber(RootinePlantEntity, NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         stored: float | int = int(value) if self._desc.percent else value
-        self.manager.update_settings(self.subentry_id, **{self._desc.key: stored})
+        await self.manager.async_set_limit(self.subentry_id, self._desc.key, stored)
