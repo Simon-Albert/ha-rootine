@@ -17,7 +17,7 @@ const T = {
     reason: { cold_now: "zu kalt", cold_forecast: "Kälte erwartet", heat_now: "zu heiß",
       heat_forecast: "Hitze erwartet", drop: "Wert stark gefallen", stale: "meldet nicht",
       battery_low: "Batterie schwach" },
-    done: "Erledigt", noFertilize: "Düngen", noFertilizeHint: "nicht nötig", noOther: "Weitere Aufgaben", tabOverview: "Übersicht", tabCare: "Pflege", tabLog: "Verlauf", tabProfile: "Steckbrief", noCare: "Noch keine Pflegetexte. Unter „Bearbeiten“ ergänzen.", noOtherHint: "keine", water: "Gegossen", fertilize: "Gedüngt", postpone: "Verschieben",
+    done: "Erledigt", tabOverview: "Übersicht", tabCare: "Pflege", tabLog: "Verlauf", tabProfile: "Steckbrief", noCare: "Noch keine Pflegetexte. Unter „Bearbeiten“ ergänzen.", water: "Gegossen", fertilize: "Gedüngt", postpone: "Verschieben",
     days: (n) => (n === 0 ? "heute" : n === 1 ? "morgen" : n < 0 ? `seit ${-n} Tg.` : `in ${n} Tg.`),
     details: "Details", close: "Schließen", edit: "Bearbeiten", save: "Speichern", cancel: "Abbrechen",
     photo: "Foto ändern", history: "Verlauf", undo: "Rückgängig", undone: "rückgängig",
@@ -45,7 +45,7 @@ const T = {
     reason: { cold_now: "too cold", cold_forecast: "cold expected", heat_now: "too hot",
       heat_forecast: "heat expected", drop: "value dropped", stale: "not reporting",
       battery_low: "battery low" },
-    done: "Done", noFertilize: "Fertilize", noFertilizeHint: "not needed", noOther: "Other tasks", tabOverview: "Overview", tabCare: "Care", tabLog: "History", tabProfile: "Profile", noCare: "No care notes yet. Add them under Edit.", noOtherHint: "none", water: "Watered", fertilize: "Fertilized", postpone: "Postpone",
+    done: "Done", tabOverview: "Overview", tabCare: "Care", tabLog: "History", tabProfile: "Profile", noCare: "No care notes yet. Add them under Edit.", water: "Watered", fertilize: "Fertilized", postpone: "Postpone",
     days: (n) => (n === 0 ? "today" : n === 1 ? "tomorrow" : n < 0 ? `${-n}d overdue` : `in ${n}d`),
     details: "Details", close: "Close", edit: "Edit", save: "Save", cancel: "Cancel",
     photo: "Change photo", history: "History", undo: "Undo", undone: "undone",
@@ -107,34 +107,60 @@ ha-card { padding: 12px; overflow: hidden; background: var(--ha-card-background,
 .head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 10px; }
 .head .summary { flex: 1; }
 .head h2 { margin: 0; font-size: 1.1em; font-weight: 600; }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 10px; }
-.plant { --accent: var(--primary-color); position: relative; display: flex; flex-direction: column; gap: 8px; padding: 12px 12px 10px 16px; border-radius: 16px; overflow: hidden;
-  transition: transform .15s ease, box-shadow .15s ease;
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; }
+ha-card.flat { padding: 0; background: none; border: none; box-shadow: none; backdrop-filter: none; overflow: visible; height: 100%; box-sizing: border-box; }
+:host { height: 100%; }
+.plant { --accent: var(--primary-color); position: relative; display: flex; flex-direction: column; gap: 10px; padding: 14px 14px 12px; border-radius: 20px; overflow: hidden;
+  height: 100%; box-sizing: border-box; isolation: isolate;
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
   background: color-mix(in srgb, var(--primary-text-color) 5%, transparent);
   border: 1px solid color-mix(in srgb, var(--primary-text-color) 10%, transparent); }
-.plant::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--accent); }
-.plant:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+.plant::before { content: ""; position: absolute; inset: 0; z-index: -1;
+  background: radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--accent) 26%, transparent), transparent 62%); }
+.plant .bgimg { position: absolute; inset: -24px; z-index: -2; background-size: cover; background-position: center; filter: blur(26px) saturate(1.4); opacity: .22; }
+.plant:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  box-shadow: 0 10px 26px rgba(0,0,0,.28), 0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent); }
 .summary { display: flex; gap: 6px; flex-wrap: wrap; }
-.bar { position: relative; height: 8px; border-radius: 6px; background: color-mix(in srgb, var(--primary-text-color) 12%, transparent); }
-.bar .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 6px; background: var(--accent); transition: width .4s ease; }
-.bar .mark { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--primary-text-color); opacity: .75; border-radius: 1px; }
-.barlabel { display: flex; justify-content: space-between; font-size: .78em; color: var(--secondary-text-color); margin-top: 2px; }
-.top { display: flex; gap: 10px; align-items: center; }
-.pic { width: 56px; height: 56px; border-radius: 12px; object-fit: cover; flex: none;
+.top { display: flex; gap: 12px; align-items: center; }
+.pic { position: relative; width: 56px; height: 56px; border-radius: 16px; object-fit: cover; flex: none;
   background: color-mix(in srgb, var(--primary-text-color) 10%, transparent);
-  display: flex; align-items: center; justify-content: center; font-size: 28px; }
+  display: flex; align-items: center; justify-content: center; font-size: 28px;
+  box-shadow: 0 0 0 2px var(--accent), 0 6px 16px rgba(0,0,0,.3); }
 .title { flex: 1; min-width: 0; }
-.name { font-weight: 600; font-size: 1.05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sub { color: var(--secondary-text-color); font-size: .85em; display: -webkit-box; -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical; overflow: hidden; }
+.name { font-weight: 700; font-size: 1.12em; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sub { color: var(--secondary-text-color); font-size: .82em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px;
   font-size: .8em; font-weight: 600; color: #fff; white-space: nowrap; }
-.tasks { display: flex; flex-direction: column; gap: 4px; }
-.task { display: flex; align-items: center; gap: 8px; font-size: .92em; min-height: 30px; }
-.task .label { flex: 1; min-width: 3.5em; }
-.task.none { opacity: .7; }
-.task.none .when { margin-right: 4px; }
-.task .when { color: var(--secondary-text-color); font-size: .85em; white-space: nowrap; }
+.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mt { --c: var(--secondary-text-color); display: flex; align-items: center; gap: 6px; padding: 7px 7px 7px 11px; border-radius: 14px; min-width: 0;
+  background: color-mix(in srgb, var(--primary-text-color) 7%, transparent); border: 1px solid transparent; }
+.mt:only-child { grid-column: span 2; }
+.mt .mtx { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+.mt .k { font-size: .78em; color: var(--secondary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mt .v { font-weight: 650; font-size: .95em; color: var(--c); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mt.s-ok { --c: var(--primary-text-color); }
+.mt.s-soon { --c: #eab308; }
+.mt.s-due, .mt.s-overdue { --c: #fff; background: var(--accent2); border-color: transparent; animation: glow 2.4s ease-in-out infinite; }
+.mt.s-due { --accent2: #f59e0b; } .mt.s-overdue { --accent2: #ef4444; }
+.mt.s-due .k, .mt.s-overdue .k { color: rgba(255,255,255,.85); }
+.mt.s-rest { opacity: .62; }
+@keyframes glow { 50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent2) 30%, transparent); } }
+.mt button.go { width: 30px; height: 30px; padding: 0; border-radius: 50%; flex: none; font-size: 1em; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center; }
+.mt.s-due button.go, .mt.s-overdue button.go { background: rgba(255,255,255,.22); border-color: rgba(255,255,255,.35); color: #fff; }
+.foot button.link { border-color: transparent; background: transparent; color: var(--secondary-text-color); padding: 3px 4px; flex: none; }
+.foot button.link:hover { color: var(--primary-text-color); background: transparent; }
+.foot { display: flex; align-items: center; gap: 8px; margin-top: auto; min-height: 30px; }
+.foot .more { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: flex-end; gap: 6px; font-size: .84em; color: var(--secondary-text-color); }
+.foot .more .t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.foot .more button.go { width: 26px; height: 26px; padding: 0; border-radius: 50%; flex: none; display: inline-flex; align-items: center; justify-content: center; }
+.chip.st { margin-top: 3px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.title { display: flex; flex-direction: column; align-items: flex-start; }
+.title > .name, .title > .sub { max-width: 100%; }
+.moist { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: color-mix(in srgb, var(--primary-text-color) 12%, transparent); }
+.moist .fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); transition: width .4s ease; }
+.moist .mark { position: absolute; top: -2px; bottom: 0; width: 2px; background: var(--primary-text-color); opacity: .8; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 button, select, input, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; border: 1px solid color-mix(in srgb, var(--primary-text-color) 20%, transparent);
   background: color-mix(in srgb, var(--primary-color) 14%, transparent); border-radius: 10px;
@@ -333,7 +359,7 @@ class RootineCard extends HTMLElement {
            <button class="${this._filter === "all" ? "" : "ghost"}" data-filter="all">${t.all}</button></div></div>`
       : "";
     const keep = this.shadowRoot.querySelector(".dialog .body")?.scrollTop || 0;
-    this.shadowRoot.innerHTML = `<style>${STYLE}</style><ha-card class="${this._compact ? "compact" : ""}">${head}${body}</ha-card>${this._dialog ? this._dialogHtml() : ""}${this._confirm ? this._confirmHtml() : ""}`;
+    this.shadowRoot.innerHTML = `<style>${STYLE}</style><ha-card class="${this._compact ? "compact" : ""}${this._config.flat ? " flat" : ""}">${head}${body}</ha-card>${this._dialog ? this._dialogHtml() : ""}${this._confirm ? this._confirmHtml() : ""}`;
     if (keep) { const dlg = this.shadowRoot.querySelector(".dialog .body"); if (dlg) dlg.scrollTop = keep; }
     this._bind();
     if (this._dialog) this._afterDialog();
@@ -403,32 +429,43 @@ class RootineCard extends HTMLElement {
     return `<span class="chip" style="background:${COLORS[status] || COLORS.unknown}">${esc(this._t.status[status] || status)}</span>`;
   }
 
+  _taskTile(p, item) {
+    const t = this._t, core = !item.oneoff && (item.key === "water" || item.key === "fertilize");
+    const ico = core ? (item.key === "water" ? "💧" : "🌿") : "✔️";
+    const val = this._when(item) || t.status[item.status] || "";
+    const verb = this._verb(item);
+    return `<div class="mt s-${esc(item.status)}"><div class="mtx"><span class="k">${ico} ${esc(item.name)}</span><span class="v">${esc(val)}</span></div>
+      <button class="go" data-done="${esc(item.key)}" data-plant="${esc(p.id)}" title="${esc(verb)}" aria-label="${esc(verb)}">✓</button></div>`;
+  }
+
   _plantHtml(p) {
     const t = this._t, a = p.attrs;
     const pic = a.entity_picture ? `<img class="pic" src="${esc(a.entity_picture)}" alt="">` : `<div class="pic">🌱</div>`;
+    const bg = a.entity_picture ? `<div class="bgimg" style="background-image:url('${esc(a.entity_picture)}')"></div>` : "";
     const sub = [a.profile.common_name, a.profile.cultivar && `'${a.profile.cultivar}'`].filter(Boolean).join(" ");
-    const warns = (a.warnings || []).map((w) =>
-      `<span class="chip" style="background:${COLORS[w.key === "sensor_check" ? "check_sensor" : w.key]}" title="${esc(t.reason[w.reason] || "")}">${esc(t.warn[w.key])}${w.reason ? ` · ${esc(t.reason[w.reason] || w.reason)}` : ""}</span>`).join("");
-    const row = (item, extra = "") => `<div class="task">${this._chip(item.status)}<span class="label">${esc(item.name)}${extra}</span>
-        <span class="when">${esc(this._when(item))}</span><button data-done="${esc(item.key)}" data-plant="${esc(p.id)}">${esc(this._verb(item))}</button></div>`;
-    const hint = (label, text) => `<div class="task none"><span class="chip" style="background:${COLORS.rest}">${esc(t.status.rest || "")}</span><span class="label">${esc(label)}</span><span class="when">${esc(text)}</span></div>`;
-    // every card has the same three rows so the cards in a grid are equally tall:
-    // watering, fertilizing (or a hint) and the most urgent other task (or a hint)
+    // the status chip sits under the name and carries the warning reason, if there is one
+    const warnText = (a.warnings || []).map((w) => `${t.warn[w.key]}${w.reason ? ` · ${t.reason[w.reason] || w.reason}` : ""}`).join(" · ");
+    // two tiles: watering and fertilizing; missing ones are left out, other tasks fill up the slots
     const items = this._items(a);
-    const isCore = (i) => !i.oneoff && (i.key === "water" || i.key === "fertilize");
-    const others = items.filter((i) => !isCore(i));
-    const urgent = others.length ? this._urgent(others) : null;
-    const tasks = items.filter((i) => !i.oneoff && i.key === "water").map((i) => row(i)).join("")
-      + (a.tasks?.fertilize ? row(items.find((i) => !i.oneoff && i.key === "fertilize")) : hint(t.noFertilize, t.noFertilizeHint))
-      + (urgent ? row(urgent, others.length > 1 ? ` <span class="muted">+${others.length - 1}</span>` : "") : hint(t.noOther, t.noOtherHint));
+    const core = ["water", "fertilize"].map((k) => items.find((i) => !i.oneoff && i.key === k)).filter(Boolean);
+    const rest = items.filter((i) => !core.includes(i)).sort((x, y) => RANK.indexOf(x.status) * 1000 + (x.days ?? 999) - (RANK.indexOf(y.status) * 1000 + (y.days ?? 999)));
+    const tiles = [...core, ...rest.slice(0, Math.max(0, 2 - core.length))];
+    const more = rest.slice(Math.max(0, 2 - core.length));
+    const next = more[0];
+    const moreHtml = next
+      ? `<div class="more"><span class="t"><b>${esc(next.name)}</b>${this._when(next) ? ` · ${esc(this._when(next))}` : ""}${more.length > 1 ? ` · +${more.length - 1}` : ""}</span>
+          <button class="go" data-done="${esc(next.key)}" data-plant="${esc(p.id)}" title="${esc(this._verb(next))}" aria-label="${esc(this._verb(next))}">✓</button></div>`
+      : `<div class="more"></div>`;
     const m = a.moisture;
-    const bar = m && m.value != null
-      ? `<div><div class="bar"><div class="fill" style="width:${Math.max(0, Math.min(100, m.value))}%"></div>${m.threshold != null ? `<div class="mark" style="left:${m.threshold}%" title="${esc(t.threshold)} ${m.threshold} %"></div>` : ""}</div>
-         <div class="barlabel"><span>${esc(t.eval)} ${Math.round(m.value)} %</span><span>${m.threshold != null ? `${esc(t.threshold)} ${m.threshold} %` : ""}</span></div></div>` : "";
-    return `<div class="plant" style="--accent:${COLORS[p.state] || COLORS.unknown}"><div class="top">${pic}<div class="title"><div class="name">${esc(p.name)}</div>
-      <div class="sub">${esc(sub || "")} · ${esc(t[a.location] || a.location)}</div></div>${this._chip(p.state)}</div>
-      ${warns ? `<div class="warn">${warns}</div>` : ""}${bar}<div class="tasks">${tasks}</div>
-      <div class="actions"><button class="ghost" data-details="${esc(p.id)}">${t.details}</button></div></div>`;
+    const moist = m && m.value != null
+      ? `<div class="moist" title="${esc(t.eval)} ${Math.round(m.value)} %${m.threshold != null ? ` · ${esc(t.threshold)} ${m.threshold} %` : ""}"><div class="fill" style="width:${Math.max(0, Math.min(100, m.value))}%"></div>${m.threshold != null ? `<div class="mark" style="left:${m.threshold}%"></div>` : ""}</div>
+         <span class="sr">${esc(t.eval)} ${Math.round(m.value)} %${m.threshold != null ? ` · ${esc(t.threshold)} ${m.threshold} %` : ""}</span>` : "";
+    const chip = ["ok", "rest", "unknown"].includes(p.state) ? ""
+      : `<span class="chip st" style="background:${COLORS[p.state] || COLORS.unknown}">${esc(warnText || t.status[p.state] || p.state)}</span>`;
+    return `<div class="plant" style="--accent:${COLORS[p.state] || COLORS.unknown}">${bg}<div class="top">${pic}<div class="title"><div class="name">${esc(p.name)}</div>
+      <div class="sub">${esc(sub || "")}</div>${chip}</div></div>
+      ${tiles.length ? `<div class="duo">${tiles.map((i) => this._taskTile(p, i)).join("")}</div>` : ""}
+      <div class="foot"><button class="ghost link" data-details="${esc(p.id)}">${t.details} ›</button>${moreHtml}</div>${moist}</div>`;
   }
 
   _bind() {

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.0
+
+**Neu**
+
+- Neue, kompakte Pflanzenkachel: Foto, Name und Art oben, darunter zwei Kacheln für Gießen und Düngen mit Fälligkeit und Haken zum Erledigen. Fällige Aufgaben leuchten in Orange, überfällige in Rot. Das Foto scheint weichgezeichnet durch den Hintergrund.
+- Nur noch, was nötig ist: kein „In Ordnung“-Schild, keine leeren Zeilen. Fehlt der Düngeplan, bleibt die Kachel weg. Weitere und einmalige Aufgaben stehen unten rechts mit eigenem Haken, bei mehreren mit „+n“.
+- Alle Kacheln im Raster sind gleich hoch. Die Feuchte steht als dünner Balken mit Gieß-Schwelle am unteren Rand.
+- Neue Karten-Option `flat: true`: lässt den äußeren Kartenrahmen weg, sodass die Kachel in Rastern ohne Zusatz-Styling sauber aussieht.
+
 ## 1.2.4
 
 **Geändert**

@@ -211,6 +211,15 @@ mode: overview
 layout: compact                       # eine Zeile pro Pflanze, fürs Handy
 ```
 
+Mit `flat: true` entfällt der äußere Kartenrahmen. Das ist praktisch, wenn du jede Pflanze als eigene Karte in ein
+Raster (z. B. mit auto-entities) legst:
+
+```yaml
+type: custom:rootine-card
+entity: sensor.zitrone_pflegestatus
+flat: true
+```
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="images/card-detail-dark.png">
   <img alt="Detailansicht mit Steckbrief, Diagramm und Verlauf" src="images/card-detail-light.png" width="720">
