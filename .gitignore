@@ -5,3 +5,6 @@ __pycache__/
 .coverage
 htmlcov/
 node_modules/
+
+# anonymized real data, never commit
+tests/fixtures/*.csv

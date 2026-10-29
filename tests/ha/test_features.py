@@ -858,3 +858,32 @@ async def test_sensor_mode_without_sensor_falls_back_to_schedule(hass):
     await flow.async_configure(result["flow_id"], {})  # sensor removed
     await hass.async_block_till_done()
     assert hass.states.get("sensor.satsuma_watering").state == "overdue"
+
+
+async def test_valve_run_after_days_of_rest_is_detected(hass, freezer):
+    """The last "off" before the retention window is the baseline for the next run."""
+    hass.states.async_set("switch.valve", "off")
+    entry = await setup_main(hass)
+    await add_plant(
+        hass,
+        entry,
+        "Kirsche",
+        location="outdoor",
+        water="ganzjährig: 3",
+        last_done="2026-10-29",
+        sensors={"valve_entity": "switch.valve"},
+    )
+    hass.states.async_set("switch.valve", "on")
+    await hass.async_block_till_done()
+    hass.states.async_set("switch.valve", "off")
+    await hass.async_block_till_done()
+    freezer.tick(timedelta(days=3))
+    async_fire_time_changed(hass, dt_util.now())
+    hass.states.async_set("switch.valve", "on")
+    await hass.async_block_till_done()
+    valve_logs = [
+        e
+        for e in entry.runtime_data.plants[next(iter(entry.subentries))].log
+        if e["source"] == "valve"
+    ]
+    assert len(valve_logs) == 2

@@ -466,12 +466,16 @@ class RootineManager:
         if new is None:
             return
         ts = dt_util.as_local(new.last_changed)
-        before = len(valve.valve_events(plant.valve_transitions))
         plant.valve_transitions.append((ts, new.state))
         cutoff = ts - VALVE_KEEP
-        plant.valve_transitions = [t for t in plant.valve_transitions if t[0] >= cutoff]
-        after = len(valve.valve_events(plant.valve_transitions))
-        starts_new_event = new.state == "on" and after > before
+        older = [t for t in plant.valve_transitions if t[0] < cutoff]
+        # keep the last state before the window: it is the baseline for the next off -> on
+        plant.valve_transitions = older[-1:] + [
+            t for t in plant.valve_transitions if t[0] >= cutoff
+        ]
+        events = valve.valve_events(plant.valve_transitions)
+        # a new event starts exactly now; a run within 10 min of the last one merges into it
+        starts_new_event = new.state == "on" and bool(events) and events[-1].start == ts
         if starts_new_event and self._valve_counts(plant) and plant.has_task(TASK_WATER):
             self._apply_done(plant, TASK_WATER, SOURCE_VALVE, when=ts)
         self._notify(plant)
