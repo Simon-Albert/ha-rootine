@@ -1,7 +1,7 @@
 """Replay of fixture data through Home Assistant (plan M5 acceptance).
 
-Runs against the synthetic fixtures always (CI) and against the anonymized real data when those
-files are present locally.
+Runs against the synthetic fixtures (always, also in CI). The replay of the anonymized real data
+lives in a local, git-ignored test file next to this one and uses the same helpers.
 """
 
 from __future__ import annotations
@@ -11,10 +11,9 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 
-import pytest
 from pytest_homeassistant_custom_component.common import async_fire_time_changed
 
-from ..conftest import FIXTURES, SYNTHETIC, TZ
+from ..conftest import SYNTHETIC, TZ
 from .conftest import add_plant, setup_main
 
 
@@ -27,35 +26,39 @@ class Dataset:
     water_b: list[tuple[str, str]]
     drop_day: str  # day of the implausible drop of plant a, ended by the watering that evening
     wet_days: set[str]
+    rain: dict[str, float] | None = None  # expected rain per local date (from the gauge)
 
 
 SYNTHETIC_DATA = Dataset(
     SYNTHETIC,
     "plant_a",
     "plant_b",
-    [("03.04. 18:05", "rain"), ("21.04. 22:07", "valve")],
+    [("03.04. 16:40", "rain"), ("21.04. 20:48", "valve")],
     [
-        ("06.04. 13:37", "valve"),
-        ("09.04. 10:45", "rain"),
-        ("14.04. 23:25", "valve"),
-        ("19.04. 18:51", "rain"),
+        ("06.04. 07:14", "valve"),
+        ("09.04. 14:45", "rain"),
+        ("14.04. 21:52", "valve"),
+        ("19.04. 16:22", "rain"),
     ],
     "21.04.",
     {"06.04.", "07.04."},
-)
-REAL_DATA = Dataset(
-    FIXTURES,
-    "satsuma",
-    "nektarine",
-    [("02.10. 18:05", "rain"), ("21.10. 22:07", "valve")],
-    [
-        ("06.10. 13:37", "valve"),
-        ("09.10. 10:45", "rain"),
-        ("14.10. 23:25", "valve"),
-        ("19.10. 18:51", "rain"),
-    ],
-    "21.10.",
-    {"05.10.", "06.10.", "07.10."},
+    # oracle: reference.py, rain from the gauge that resets at midnight UTC
+    {
+        "2030-04-02": 0.1,
+        "2030-04-03": 12.8,
+        "2030-04-08": 0.5,
+        "2030-04-09": 8.7,
+        "2030-04-10": 0.5,
+        "2030-04-11": 0.9,
+        "2030-04-12": 0.2,
+        "2030-04-13": 0.6,
+        "2030-04-14": 0.4,
+        "2030-04-15": 0.7,
+        "2030-04-16": 0.9,
+        "2030-04-17": 0.2,
+        "2030-04-18": 1.6,
+        "2030-04-19": 3.9,
+    },
 )
 
 
@@ -76,12 +79,16 @@ def _timeline(data: Dataset) -> list[tuple[datetime, str, str]]:
         ("valve_2.csv", "switch.valve_2"),
     ):
         events += [(ts, entity, state) for ts, state in _rows(data.directory / name)]
-    with (data.directory / "rain_daily.csv").open(newline="") as handle:
-        for row in csv.DictReader(handle):
-            day = datetime.fromisoformat(row["date"]).replace(tzinfo=TZ)
-            # a daily-total sensor: reset, then the day's rain as one increment
-            events.append((day.replace(hour=0, minute=5), "sensor.rain", "0"))
-            events.append((day.replace(hour=0, minute=6), "sensor.rain", row["mm"]))
+    gauge = data.directory / "rain_sensor.csv"
+    if gauge.exists():  # cumulative gauge as recorded (resets at midnight UTC)
+        events += [(ts, "sensor.rain", state) for ts, state in _rows(gauge)]
+    else:
+        with (data.directory / "rain_daily.csv").open(newline="") as handle:
+            for row in csv.DictReader(handle):
+                day = datetime.fromisoformat(row["date"]).replace(tzinfo=TZ)
+                # a daily-total sensor: reset, then the day's rain as one increment
+                events.append((day.replace(hour=0, minute=5), "sensor.rain", "0"))
+                events.append((day.replace(hour=0, minute=6), "sensor.rain", row["mm"]))
     events.sort(key=lambda e: e[0])
     return events
 
@@ -174,13 +181,9 @@ async def _replay(hass, freezer, data: Dataset) -> None:
     assert drop_span[0].startswith(data.drop_day) and drop_span[1].startswith(data.drop_day)
     assert reasons["b"] == set()
     assert wet_days == data.wet_days
+    if data.rain is not None:
+        assert {d: round(mm, 2) for d, mm in manager.rain_days.items() if mm} == data.rain
 
 
 async def test_replay_synthetic(hass, freezer):
     await _replay(hass, freezer, SYNTHETIC_DATA)
-
-
-async def test_replay_real_data(hass, freezer):
-    if not (FIXTURES / "satsuma_moisture.csv").exists():
-        pytest.skip("anonymized real data only available locally")
-    await _replay(hass, freezer, REAL_DATA)

@@ -7,4 +7,7 @@ htmlcov/
 node_modules/
 
 # anonymized real data, never commit
-tests/fixtures/*.csv
+tests/fixtures/
+
+# tests against the real data hold values derived from it: local only
+tests/**/*_local.py

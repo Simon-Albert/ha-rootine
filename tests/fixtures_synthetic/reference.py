@@ -190,6 +190,19 @@ def classify(events, valve_starts, rain):
     return out
 
 
+def rain_from_gauge():
+    """Rain per local date from the cumulative gauge: sum of rises; a fall is a reset."""
+    days: dict[dt.date, float] = {}
+    previous = None
+    with open(HERE / "rain_sensor.csv", newline="") as f:
+        for r in csv.DictReader(f):
+            t, value = dt.datetime.fromisoformat(r["timestamp"]), float(r["state"])
+            if previous is not None and value > previous:
+                days[t.date()] = round(days.get(t.date(), 0.0) + value - previous, 3)
+            previous = value
+    return days
+
+
 if __name__ == "__main__":
     a = load_moisture("plant_a")
     b = load_moisture("plant_b")
@@ -203,6 +216,11 @@ if __name__ == "__main__":
     for thr in (55, 45):
         for method in ("raw", "median_24h", "max_24h"):
             print(f"  {thr} % {method:11} {threshold_crossings(b, start, end, thr, method)}")
+
+    print("Regen aus dem Zaehler (Ruecksetzung um Mitternacht UTC), pro Ortsdatum")
+    gauge = rain_from_gauge()
+    print("  ", {d.strftime("%d.%m."): mm for d, mm in sorted(gauge.items())})
+    print("   gleich rain_daily.csv:", gauge == {d: mm for d, mm in rain.items() if mm})
 
     print("7.5/7.6 Wassereintraege mit Einordnung")
     print("  plant_a", classify(water_inputs(a), valve_events(2), rain))

@@ -3,7 +3,8 @@
 Deterministic (fixed seed), no real measurements. The data reproduce the patterns that matter for
 the logic: sun-driven daily swing, multi-day drying, watering jumps, slow and fast rise after rain,
 a pulled sensor, reporting gaps up to 31 h, short unavailable phases, valve bursts and test runs
-without effect, multi-day drizzle and frost nights.
+without effect, multi-day drizzle, frost nights and a rain gauge that resets at midnight UTC.
+All times and amounts are invented.
 
     python -I scripts/make_synthetic_fixtures.py
 """
@@ -17,7 +18,9 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-SEED = 20300401
+UTC = ZoneInfo("UTC")
+
+SEED = 20300417
 TZ = ZoneInfo("Europe/Berlin")
 START = datetime(2030, 4, 1, 0, 0, tzinfo=TZ)
 END = datetime(2030, 4, 30, 23, 59, tzinfo=TZ)
@@ -30,10 +33,12 @@ def at(day: int, hour: int, minute: int = 0, second: int = 0) -> datetime:
 
 # --- weather ---------------------------------------------------------------------------------
 
-RAIN_MM = {2: 0.04, 3: 10.53, 8: 0.35, 9: 9.61, 18: 1.27, 19: 4.41}
-for _day, _mm in zip(range(10, 18), (0.6, 0.8, 0.3, 0.7, 0.5, 0.4, 0.8, 0.3), strict=True):
+RAIN_MM = {2: 0.1, 3: 12.8, 8: 0.5, 9: 8.7, 18: 1.6, 19: 3.9}
+for _day, _mm in zip(range(10, 18), (0.5, 0.9, 0.2, 0.6, 0.4, 0.7, 0.9, 0.2), strict=True):
     RAIN_MM[_day] = _mm  # drizzle: many small days, never enough on two consecutive days
-CLOUDY = {3, 4, 5, 9, 10, 15, 19, 24, 25}  # no sun dip on these days
+CLOUDY = {3, 4, 5, 9, 10, 16, 19, 22, 24}  # no sun dip on these days
+# local hours in which a day's rain falls (two steps per hour); other days at a random hour
+RAIN_HOURS = {3: (13, 14, 15, 16), 8: (1,), 9: (11, 12, 13, 14), 18: (20, 21), 19: (14, 15, 16)}
 
 
 def sunny(t: datetime) -> bool:
@@ -118,34 +123,34 @@ def simulate(plant: Plant, rng: random.Random) -> list[tuple[datetime, str]]:
 
 def plant_a() -> Plant:
     """Pot plant with little sun dip; rain jump, waterlogging, pulled sensor, valve 2."""
-    p = Plant("plant_a", level=82.0, amplitude=3.0, drying=0.22)
-    p.jumps[at(3, 18, 5)] = ("set", 98.0)  # rain jump to nearly saturated
-    p.forced.add(at(3, 18, 5))
-    p.flat.append((at(3, 18, 6), at(6, 22, 0), 0.042))  # stays very wet for days (rows every ~24 h)
-    p.jumps[at(21, 8, 33)] = "pull"  # sensor pulled: big drop, then steady decline like in air
-    p.forced.add(at(21, 8, 33))
-    p.jumps[at(21, 22, 7)] = "reinsert"  # watered through valve 2, sensor back in the soil
-    p.forced.add(at(21, 22, 7))
-    p.flat.append((at(27, 4, 0), at(28, 6, 0), 0.0))  # about 30 h without any change
-    p.unavailable += [at(d, 4, 12) for d in (2, 7, 12, 16, 24, 29)]
+    p = Plant("plant_a", level=79.0, amplitude=2.6, drying=0.21)
+    p.jumps[at(3, 16, 40)] = ("set", 97.0)  # rain jump to nearly saturated
+    p.forced.add(at(3, 16, 40))
+    p.flat.append((at(3, 16, 41), at(6, 20, 0), 0.045))  # stays very wet for days
+    p.jumps[at(21, 10, 12)] = "pull"  # sensor pulled: big drop, then steady decline like in air
+    p.forced.add(at(21, 10, 12))
+    p.jumps[at(21, 20, 48)] = "reinsert"  # watered through valve 2, sensor back in the soil
+    p.forced.add(at(21, 20, 48))
+    p.flat.append((at(26, 23, 0), at(28, 1, 0), 0.0))  # about 30 h without any change
+    p.unavailable += [at(d, 3, 27) for d in (3, 8, 13, 17, 23, 29)]
     return p
 
 
 def plant_b() -> Plant:
     """Sunny spot with strong daily swing; valve 1, slow rain rise, rain jump, real drying."""
-    p = Plant("plant_b", level=74.0, amplitude=8.0, drying=0.32)
-    p.jumps[at(6, 13, 36, 56).replace(second=0)] = 37.0  # valve 1
-    p.forced.add(at(6, 13, 37))
-    for minute in (0, 15, 30, 45):  # rain: +3 every 15 min, +12 in under 3 h
-        p.jumps[at(9, 10, minute)] = 3.0
-        p.forced.add(at(9, 10, minute))
-    p.flat.append((at(9, 9, 0), at(9, 12, 0), 0.0))
-    p.jumps[at(14, 23, 25)] = 42.0  # valve 1 after several dry days
-    p.forced.add(at(14, 23, 25))
-    p.jumps[at(19, 18, 51)] = 40.0  # rain jump on a day with 4.41 mm (+1.27 mm the day before)
-    p.forced.add(at(19, 18, 51))
-    p.flat.append((at(24, 20, 0), at(25, 22, 0), 0.0))  # a full day without any change
-    p.unavailable += [at(d, 3, 40) for d in (2, 7, 12, 16, 24, 29)]
+    p = Plant("plant_b", level=71.0, amplitude=7.5, drying=0.30)
+    p.jumps[at(6, 7, 13)] = 35.0  # valve 1
+    p.forced.add(at(6, 7, 14))
+    for minute in (0, 15, 30, 45):  # rain: +3.2 every 15 min, +12.8 in under 3 h
+        p.jumps[at(9, 14, minute)] = 3.2
+        p.forced.add(at(9, 14, minute))
+    p.flat.append((at(9, 13, 0), at(9, 16, 0), 0.0))
+    p.jumps[at(14, 21, 52)] = 44.0  # valve 1 after several dry days
+    p.forced.add(at(14, 21, 52))
+    p.jumps[at(19, 16, 22)] = 38.0  # rain jump on a day with 3.9 mm (+1.6 mm the day before)
+    p.forced.add(at(19, 16, 22))
+    p.flat.append((at(24, 19, 0), at(25, 18, 0), 0.0))  # a full day without any change
+    p.unavailable += [at(d, 2, 55) for d in (3, 8, 13, 17, 23, 28)]
     return p
 
 
@@ -177,8 +182,8 @@ def burst(start: datetime, count: int, rng: random.Random) -> list[tuple[datetim
 
 # --- temperature -----------------------------------------------------------------------------
 
-COLD = {12: 2.2, 26: 1.4, 30: 2.6}  # frost nights: minimum before sunrise
-COOL_MORNING = {21: 4.3}  # short cold spell 08:00-10:00
+COLD = {11: 1.8, 25: 0.9, 30: 2.3}  # frost nights: minimum before sunrise
+COOL_MORNING = {20: 3.8}  # short cold spell 07:00-09:00
 
 
 def temperature_rows(rng: random.Random) -> list[tuple[datetime, float, float, float]]:
@@ -186,20 +191,53 @@ def temperature_rows(rng: random.Random) -> list[tuple[datetime, float, float, f
     t = START
     while t <= END:
         hour = t.hour
-        night_low = COLD.get(t.day, 9.0 + (t.day % 4))
+        night_low = COLD.get(t.day, 8.0 + (t.day % 5) * 0.8)
         swing = (1 - math.cos(2 * math.pi * (hour - 5) / 24)) / 2  # 0 at 05:00, 1 at 17:00
         value = night_low + swing * 12 + rng.uniform(-0.3, 0.3)
         if t.day in COLD and hour < 5:
             value = night_low + (5 - hour) * 0.6
         if t.day in COLD and 5 <= hour < 9:
             value = night_low + (hour - 5) * 0.7
-        if t.day in COOL_MORNING and 8 <= hour < 10:
+        if t.day in COOL_MORNING and 7 <= hour < 9:
             value = COOL_MORNING[t.day]
         if t.day == 30 and hour >= 2:
-            value = min(value, 3.5)  # stays cold until the end of the data (open episode)
+            value = min(value, 3.2)  # stays cold until the end of the data (open episode)
         low = round(value, 1)
         rows.append((t, round(value + 0.4, 2), low, round(value + 0.9, 1)))
         t += timedelta(hours=1)
+    return rows
+
+
+# --- rain gauge --------------------------------------------------------------------------------
+
+
+def rain_sensor_rows(rng: random.Random) -> list[tuple[datetime, str]]:
+    """Cumulative total (total_increasing) that resets at midnight UTC, like many rain gauges.
+
+    Until the reset (02:00 local in summer time) the gauge still shows the previous total, so
+    rain between 00:00 and 02:00 local is added on top of yesterday's value. Day 8 rains in
+    exactly that window. The amounts per local day match rain_daily.csv.
+    """
+    events: list[tuple[datetime, float | None]] = []  # None = reset
+    day = START.date()
+    while day <= END.date():
+        if day != START.date():
+            midnight_utc = datetime(day.year, day.month, day.day, tzinfo=UTC).astimezone(TZ)
+            events.append((midnight_utc + timedelta(seconds=rng.randint(1, 9)), None))
+        mm = RAIN_MM.get(day.day, 0)
+        if mm:
+            hours = RAIN_HOURS.get(day.day, (rng.randint(5, 20),))
+            steps = [round(mm / (2 * len(hours)), 2)] * (2 * len(hours))
+            steps[-1] = round(mm - sum(steps[:-1]), 2)
+            for i, amount in enumerate(steps):
+                minute = 10 + 25 * (i % 2)
+                ts = datetime(day.year, day.month, day.day, hours[i // 2], minute, tzinfo=TZ)
+                events.append((ts + timedelta(seconds=rng.randint(0, 59)), amount))
+        day += timedelta(days=1)
+    rows, total = [(START + timedelta(seconds=17), "0.00")], 0.0
+    for ts, amount in sorted(events, key=lambda e: e[0]):
+        total = 0.0 if amount is None else round(total + amount, 2)
+        rows.append((ts, f"{total:.2f}"))
     return rows
 
 
@@ -220,17 +258,17 @@ def main() -> None:
     OUT.mkdir(exist_ok=True)
     write("plant_a_moisture.csv", ["timestamp", "state"], simulate(plant_a(), rng))
     write("plant_b_moisture.csv", ["timestamp", "state"], simulate(plant_b(), rng))
-    v1 = [(at(6, 13, 36, 56), 9), *burst(at(14, 23, 25, 2), 6, rng)]
+    v1 = [(at(6, 7, 13, 48), 11), *burst(at(14, 21, 51, 41), 6, rng)]  # starts before the jump
     v2 = [
-        (at(5, 13, 58, 33), 61),
-        *burst(at(14, 23, 25, 31), 4, rng),
-        (at(18, 15, 9, 19), 7),  # test runs without effect on the plant
-        (at(18, 15, 10, 25), 7),
-        (at(18, 15, 24, 11), 5),
-        (at(18, 16, 15, 14), 6),
-        (at(21, 22, 7, 7), 7),  # real watering
+        (at(5, 9, 41, 12), 48),
+        *burst(at(14, 21, 52, 40), 4, rng),
+        (at(18, 11, 31, 7), 6),  # test runs without effect on the plant
+        (at(18, 11, 32, 15), 8),
+        (at(18, 11, 46, 2), 4),
+        (at(18, 12, 37, 44), 7),
+        (at(21, 20, 48, 3), 9),  # real watering
     ]
-    restarts = [at(2, 4, 12), at(16, 4, 12)]
+    restarts = [at(3, 3, 27), at(17, 3, 27)]
     write("valve_1.csv", ["timestamp", "state"], valve(v1, restarts))
     write("valve_2.csv", ["timestamp", "state"], valve(v2, restarts))
     write(
@@ -245,6 +283,7 @@ def main() -> None:
         while day <= END.date():
             writer.writerow([day.isoformat(), RAIN_MM.get(day.day, 0)])
             day += timedelta(days=1)
+    write("rain_sensor.csv", ["timestamp", "state"], rain_sensor_rows(rng))
 
 
 if __name__ == "__main__":
