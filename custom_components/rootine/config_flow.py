@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Any
 
 import voluptuous as vol
@@ -49,6 +50,7 @@ from .const import (
     TASK_SCHEDULE,
     TASK_WATER,
 )
+from .logic.oneoff import REMIND_MAX
 from .logic.profile import (
     Profile,
     apply_opb,
@@ -490,6 +492,7 @@ class PlantSubentryFlow(ConfigSubentryFlow):
             "add_task",
             "edit_task",
             "remove_task",
+            "oneoffs",
         ]
         return self.async_show_menu(step_id="reconfigure", menu_options=options)
 
@@ -839,6 +842,108 @@ class PlantSubentryFlow(ConfigSubentryFlow):
             description_placeholders=placeholders,
         )
 
+    # one-time tasks (store values, never reload)
+
+    async def async_step_oneoffs(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        return self.async_show_menu(
+            step_id="oneoffs", menu_options=["add_oneoff", "edit_oneoff", "remove_oneoff"]
+        )
+
+    def _save_oneoff(self, user_input: dict[str, Any], oneoff_id: str | None) -> bool:
+        name = (user_input.get(CONF_NAME) or "").strip()
+        if not name:
+            return False
+        values = {
+            "name": name,
+            "due": date.fromisoformat(user_input["due"]),
+            "yearly": bool(user_input.get("yearly", False)),
+            "remind_days": int(user_input.get("remind_days") or 0),
+        }
+        manager, sid = self._manager(), self._reconfigure_subentry_id
+        if oneoff_id is None:
+            manager.add_oneoff(sid, **values)
+        else:
+            manager.update_oneoff(sid, oneoff_id, **values)
+        return True
+
+    async def async_step_add_oneoff(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        if self._plant() is None:
+            return self.async_abort(reason="not_loaded")
+        if user_input is not None and self._save_oneoff(user_input, None):
+            return self.async_abort(reason="reconfigure_successful")
+        current = user_input or {"due": dt_util.now().date().isoformat()}
+        return self.async_show_form(
+            step_id="add_oneoff",
+            data_schema=self.add_suggested_values_to_schema(_ONEOFF_SCHEMA, current),
+            errors={"name": "name_required"} if user_input is not None else {},
+        )
+
+    def _oneoff_picker(self) -> vol.Schema:
+        plant = self._plant()
+        options = [
+            {"value": o.id, "label": f"{o.name} ({o.due.strftime('%d.%m.%Y')})"}
+            for o in (plant.oneoffs if plant else [])
+        ]
+        return vol.Schema(
+            {
+                vol.Required("oneoff"): selector.SelectSelector(
+                    selector.SelectSelectorConfig(options=options)
+                )
+            }
+        )
+
+    async def async_step_edit_oneoff(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        plant = self._plant()
+        if plant is None:
+            return self.async_abort(reason="not_loaded")
+        if not plant.oneoffs:
+            return self.async_abort(reason="no_oneoffs")
+        if user_input is not None:
+            self._edit_key = user_input["oneoff"]
+            return await self.async_step_edit_oneoff_form()
+        return self.async_show_form(step_id="edit_oneoff", data_schema=self._oneoff_picker())
+
+    async def async_step_edit_oneoff_form(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        plant = self._plant()
+        item = plant.oneoff(self._edit_key) if plant else None
+        if item is None:
+            return self.async_abort(reason="no_oneoffs")
+        if user_input is not None and self._save_oneoff(user_input, item.id):
+            return self.async_abort(reason="reconfigure_successful")
+        current = user_input or {
+            CONF_NAME: item.name,
+            "due": item.due.isoformat(),
+            "yearly": item.yearly,
+            "remind_days": item.remind_days,
+        }
+        return self.async_show_form(
+            step_id="edit_oneoff_form",
+            data_schema=self.add_suggested_values_to_schema(_ONEOFF_SCHEMA, current),
+            errors={"name": "name_required"} if user_input is not None else {},
+            description_placeholders={"name": item.name},
+        )
+
+    async def async_step_remove_oneoff(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        plant = self._plant()
+        if plant is None:
+            return self.async_abort(reason="not_loaded")
+        if not plant.oneoffs:
+            return self.async_abort(reason="no_oneoffs")
+        if user_input is not None:
+            self._manager().remove_oneoff(plant.subentry_id, user_input["oneoff"])
+            return self.async_abort(reason="reconfigure_successful")
+        return self.async_show_form(step_id="remove_oneoff", data_schema=self._oneoff_picker())
+
     def _custom_tasks(self) -> list[dict[str, Any]]:
         subentry = self._get_reconfigure_subentry()
         return [t for t in subentry.data[CONF_TASKS] if t[TASK_KIND] == TASK_CUSTOM]
@@ -913,6 +1018,15 @@ class PlantSubentryFlow(ConfigSubentryFlow):
 
 
 # --- shared form helpers -------------------------------------------------------------------
+
+_ONEOFF_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_NAME): _TEXT,
+        vol.Required("due"): selector.DateSelector(),
+        vol.Optional("yearly", default=False): selector.BooleanSelector(),
+        vol.Optional("remind_days", default=0): _number(0, REMIND_MAX, 1, "d"),
+    }
+)
 
 _CARE = ("watering", "sunlight", "soil", "pruning", "fertilization")
 _SENSOR_KEYS = (

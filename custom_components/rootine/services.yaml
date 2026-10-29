@@ -150,3 +150,69 @@ undo_event:
       required: true
       selector:
         text:
+add_oneoff:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          integration: rootine
+    name:
+      required: true
+      example: Umtopfen
+      selector:
+        text:
+    due:
+      required: true
+      selector:
+        date:
+    yearly:
+      default: false
+      selector:
+        boolean:
+    remind_days:
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 60
+          mode: box
+update_oneoff:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          integration: rootine
+    oneoff_id:
+      required: true
+      example: once_01kaffee
+      selector:
+        text:
+    name:
+      selector:
+        text:
+    due:
+      selector:
+        date:
+    yearly:
+      selector:
+        boolean:
+    remind_days:
+      selector:
+        number:
+          min: 0
+          max: 60
+          mode: box
+remove_oneoff:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          integration: rootine
+    oneoff_id:
+      required: true
+      example: once_01kaffee
+      selector:
+        text:

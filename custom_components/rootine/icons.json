@@ -134,6 +134,15 @@
     },
     "undo_event": {
       "service": "mdi:undo"
+    },
+    "add_oneoff": {
+      "service": "mdi:calendar-plus"
+    },
+    "update_oneoff": {
+      "service": "mdi:calendar-edit"
+    },
+    "remove_oneoff": {
+      "service": "mdi:calendar-remove"
     }
   }
 }

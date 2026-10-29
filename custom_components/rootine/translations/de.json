@@ -124,7 +124,8 @@
             "limits_edit": "Grenzwerte",
             "add_task": "Weitere Aufgabe hinzufügen",
             "edit_task": "Aufgabe bearbeiten",
-            "remove_task": "Aufgabe entfernen"
+            "remove_task": "Aufgabe entfernen",
+            "oneoffs": "Einmalige Aufgaben"
           }
         },
         "general": {
@@ -305,6 +306,46 @@
           "data": {
             "task": "Aufgabe"
           }
+        },
+        "oneoffs": {
+          "title": "Einmalige Aufgaben",
+          "menu_options": {
+            "add_oneoff": "Einmalige Aufgabe hinzufügen",
+            "edit_oneoff": "Einmalige Aufgabe bearbeiten",
+            "remove_oneoff": "Einmalige Aufgabe löschen"
+          }
+        },
+        "add_oneoff": {
+          "title": "Einmalige Aufgabe",
+          "description": "Zum Beispiel Umtopfen oder Rückschnitt. Erledigt landet sie im Verlauf; eine jährliche springt aufs nächste Jahr.",
+          "data": {
+            "name": "Name",
+            "due": "Fällig am",
+            "yearly": "Jährlich wiederholen",
+            "remind_days": "Tage vorher erinnern"
+          }
+        },
+        "edit_oneoff": {
+          "title": "Einmalige Aufgabe bearbeiten",
+          "data": {
+            "oneoff": "Aufgabe"
+          }
+        },
+        "edit_oneoff_form": {
+          "title": "{name} bearbeiten",
+          "description": "Zum Beispiel Umtopfen oder Rückschnitt. Erledigt landet sie im Verlauf; eine jährliche springt aufs nächste Jahr.",
+          "data": {
+            "name": "Name",
+            "due": "Fällig am",
+            "yearly": "Jährlich wiederholen",
+            "remind_days": "Tage vorher erinnern"
+          }
+        },
+        "remove_oneoff": {
+          "title": "Einmalige Aufgabe löschen",
+          "data": {
+            "oneoff": "Aufgabe"
+          }
         }
       },
       "error": {
@@ -317,7 +358,8 @@
         "sensor_mode_needs_sensor": "Der Modus „Sensor“ braucht einen Feuchtesensor.",
         "threshold_required": "Bitte eine Gieß-Schwelle angeben.",
         "task_exists": "Diese Aufgabe gibt es schon.",
-        "photo_unresolvable": "Dieses Bild lässt sich nicht anzeigen. Bitte ein Foto hochladen oder ein Bild aus den Medien wählen."
+        "photo_unresolvable": "Dieses Bild lässt sich nicht anzeigen. Bitte ein Foto hochladen oder ein Bild aus den Medien wählen.",
+        "name_required": "Bitte einen Namen eingeben."
       },
       "abort": {
         "reconfigure_successful": "Gespeichert.",
@@ -325,7 +367,8 @@
         "opb_missing": "OpenPlantbook ist nicht installiert.",
         "opb_failed": "OpenPlantbook hat nicht geantwortet.",
         "opb_not_linked": "Diese Pflanze ist nicht mit OpenPlantbook verknüpft.",
-        "no_custom_tasks": "Es gibt keine weiteren Aufgaben."
+        "no_custom_tasks": "Es gibt keine weiteren Aufgaben.",
+        "no_oneoffs": "Diese Pflanze hat keine einmaligen Aufgaben."
       }
     }
   },
@@ -482,6 +525,12 @@
     },
     "photo_unresolvable": {
       "message": "Dieses Bild lässt sich nicht anzeigen. Bitte ein Foto hochladen oder ein Bild aus den Medien wählen."
+    },
+    "unknown_oneoff": {
+      "message": "Diese einmalige Aufgabe gibt es nicht."
+    },
+    "name_required": {
+      "message": "Bitte einen Namen angeben."
     }
   },
   "services": {
@@ -653,6 +702,76 @@
         },
         "event_id": {
           "name": "Ereignis",
+          "description": ""
+        }
+      }
+    },
+    "add_oneoff": {
+      "name": "Einmalige Aufgabe hinzufügen",
+      "description": "Legt eine einmalige Aufgabe für eine Pflanze an und gibt ihre ID zurück.",
+      "fields": {
+        "entity_id": {
+          "name": "Pflanze",
+          "description": ""
+        },
+        "name": {
+          "name": "Name",
+          "description": ""
+        },
+        "due": {
+          "name": "Fällig am",
+          "description": ""
+        },
+        "yearly": {
+          "name": "Jährlich wiederholen",
+          "description": ""
+        },
+        "remind_days": {
+          "name": "Tage vorher erinnern",
+          "description": ""
+        }
+      }
+    },
+    "update_oneoff": {
+      "name": "Einmalige Aufgabe ändern",
+      "description": "Ändert Name, Datum, Wiederholung oder Erinnerung einer einmaligen Aufgabe.",
+      "fields": {
+        "entity_id": {
+          "name": "Pflanze",
+          "description": ""
+        },
+        "oneoff_id": {
+          "name": "ID der einmaligen Aufgabe",
+          "description": ""
+        },
+        "name": {
+          "name": "Name",
+          "description": ""
+        },
+        "due": {
+          "name": "Fällig am",
+          "description": ""
+        },
+        "yearly": {
+          "name": "Jährlich wiederholen",
+          "description": ""
+        },
+        "remind_days": {
+          "name": "Tage vorher erinnern",
+          "description": ""
+        }
+      }
+    },
+    "remove_oneoff": {
+      "name": "Einmalige Aufgabe löschen",
+      "description": "Löscht eine einmalige Aufgabe, ohne sie in den Verlauf zu schreiben.",
+      "fields": {
+        "entity_id": {
+          "name": "Pflanze",
+          "description": ""
+        },
+        "oneoff_id": {
+          "name": "ID der einmaligen Aufgabe",
           "description": ""
         }
       }

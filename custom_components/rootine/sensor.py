@@ -12,6 +12,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .entity import RootineHubEntity, RootinePlantEntity, RootineTaskEntity
+from .logic import oneoff
 from .logic.due import DueStatus
 from .logic.profile import get_field
 from .manager import RootineManager
@@ -51,7 +52,9 @@ async def async_setup_entry(
 class CareStatusSensor(RootinePlantEntity, SensorEntity):
     _attr_translation_key = "care_status"
     # large and changing often; the database only keeps the state and the location
-    _unrecorded_attributes = frozenset({"profile", "log", "tasks", "warnings", "moisture"})
+    _unrecorded_attributes = frozenset(
+        {"profile", "log", "tasks", "oneoffs", "warnings", "moisture"}
+    )
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = STATUS_OPTIONS
 
@@ -81,10 +84,20 @@ class CareStatusSensor(RootinePlantEntity, SensorEntity):
             }
         profile = {name: get_field(plant.profile, name) for name in PROFILE_ATTRS}
         profile["opb_pid"] = plant.profile.opb_pid
+        oneoffs = [
+            {
+                **oneoff.to_dict(item),
+                "status": plant.oneoff_results[item.id].status.value,
+                "days": plant.oneoff_results[item.id].days,
+            }
+            for item in plant.oneoffs
+            if item.id in plant.oneoff_results
+        ]
         return {
             "location": plant.settings.location,
             "profile": profile,
             "tasks": tasks,
+            "oneoffs": oneoffs,
             "warnings": [{"key": key, **info} for key, info in plant.warnings.items()],
             "moisture": {
                 "value": plant.moisture_value,

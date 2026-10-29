@@ -61,7 +61,7 @@ from .const import (
     signal_hub,
     signal_plant,
 )
-from .logic import climate, moisture, rain, valve
+from .logic import climate, moisture, oneoff, rain, valve
 from .logic.due import DueResult, DueStatus, TaskConfig, TaskState, compute_due, worst_status
 from .logic.profile import PlantSettings, Profile, photo_url
 from .logic.schedule import ScheduleError, TaskKind, WaterMode, parse_schedule
@@ -108,8 +108,9 @@ class PlantRuntime:
     settings: PlantSettings
     states: dict[str, TaskState]
     log: list[dict[str, Any]] = field(default_factory=list)
-    oneoffs: list[dict[str, Any]] = field(default_factory=list)  # one-time tasks, see oneoff.py
+    oneoffs: list[oneoff.OneOff] = field(default_factory=list)  # one-time tasks
     results: dict[str, DueResult] = field(default_factory=dict)
+    oneoff_results: dict[str, DueResult] = field(default_factory=dict)
     # sensor tracking
     samples: list[tuple[datetime, float]] = field(default_factory=list)
     last_event: datetime | None = None
@@ -135,6 +136,9 @@ class PlantRuntime:
     def has_task(self, key: str) -> bool:
         return any(t.key == key for t in self.tasks)
 
+    def oneoff(self, oneoff_id: str) -> oneoff.OneOff | None:
+        return next((o for o in self.oneoffs if o.id == oneoff_id), None)
+
     @property
     def moisture_entity(self) -> str | None:
         return self.config.get(CONF_MOISTURE_ENTITY)
@@ -150,6 +154,11 @@ class PlantRuntime:
     @property
     def status(self) -> DueStatus:
         statuses = [r.status for r in self.results.values()]
+        # "soon" in the status means tomorrow; a reminder further ahead does not count
+        statuses += [
+            DueStatus.OK if r.status == DueStatus.SOON and r.days != 1 else r.status
+            for r in self.oneoff_results.values()
+        ]
         statuses += [_WARNING_STATUS[key] for key in self.warnings]
         return worst_status(statuses)
 
@@ -248,7 +257,7 @@ class RootineManager:
                 settings=settings_from_dict(saved.get("settings", {})),
                 states=states,
                 log=list(saved.get("log", [])),
-                oneoffs=list(saved.get("oneoffs", [])),
+                oneoffs=[oneoff.from_dict(o) for o in saved.get("oneoffs", [])],
             )
             self._restore_sensor_state(plant, saved)
             for state in plant.states.values():
@@ -380,7 +389,7 @@ class RootineManager:
                 "profile": profile_to_dict(plant.profile),
                 "settings": settings_to_dict(plant.settings),
                 "log": plant.log,
-                "oneoffs": plant.oneoffs,
+                "oneoffs": [oneoff.to_dict(o) for o in plant.oneoffs],
                 "moisture_samples": [[t.isoformat(), v] for t, v in plant.samples],
                 "anomaly": plant.anomaly,
                 "last_event": plant.last_event.isoformat() if plant.last_event else None,
@@ -609,6 +618,7 @@ class RootineManager:
         self._update_protect(plant, now)
         self._update_warnings(plant, now)
         plant.results = {task.key: self._task_result(plant, task, now) for task in plant.tasks}
+        plant.oneoff_results = {o.id: oneoff.evaluate(o, now.date()) for o in plant.oneoffs}
         async_dispatcher_send(self.hass, signal_plant(self.entry.entry_id, plant.subentry_id))
 
     def _check_rain(self, plant: PlantRuntime, now: datetime) -> None:
@@ -873,13 +883,109 @@ class RootineManager:
         plant.states[task_key].latched_since = None
         self._notify(plant)
 
+    # --- one-time tasks (store values, never reload) ----------------------------------
+
+    @callback
+    def add_oneoff(
+        self, subentry_id: str, name: str, due: date, yearly: bool = False, remind_days: int = 0
+    ) -> oneoff.OneOff:
+        plant = self.plants[subentry_id]
+        item = oneoff.OneOff(
+            f"{oneoff.PREFIX}{ulid_now().lower()}", name.strip(), due, yearly, remind_days
+        )
+        plant.oneoffs.append(item)
+        plant.oneoffs.sort(key=lambda o: o.due)
+        self._notify(plant)
+        return item
+
+    @callback
+    def update_oneoff(self, subentry_id: str, oneoff_id: str, **changes: Any) -> bool:
+        plant = self.plants[subentry_id]
+        item = plant.oneoff(oneoff_id)
+        if item is None:
+            return False
+        if "name" in changes:
+            changes["name"] = changes["name"].strip()
+        self._replace_oneoff(plant, replace(item, **changes))
+        self._notify(plant)
+        return True
+
+    @callback
+    def remove_oneoff(self, subentry_id: str, oneoff_id: str) -> bool:
+        plant = self.plants[subentry_id]
+        if plant.oneoff(oneoff_id) is None:
+            return False
+        plant.oneoffs = [o for o in plant.oneoffs if o.id != oneoff_id]
+        self._notify(plant)
+        return True
+
+    @callback
+    def complete_oneoff(
+        self,
+        subentry_id: str,
+        oneoff_id: str,
+        source: str,
+        when: datetime | None = None,
+        note: str | None = None,
+    ) -> bool:
+        """Done: into the history; a one-time task disappears, a yearly one moves on."""
+        plant = self.plants[subentry_id]
+        item = plant.oneoff(oneoff_id)
+        if item is None:
+            return False
+        when = dt_util.as_local(when) if when else dt_util.now()
+        entry = self._log_entry(oneoff_id, source, note, when)
+        entry["task_name"] = item.name
+        entry["oneoff"] = oneoff.to_dict(item)  # snapshot for undo
+        self._append_log(plant, entry)
+        following = oneoff.complete(item, dt_util.now().date())
+        if following is None:
+            plant.oneoffs = [o for o in plant.oneoffs if o.id != oneoff_id]
+        else:
+            self._replace_oneoff(plant, following)
+        self.hass.bus.async_fire(
+            EVENT_TASK_DONE,
+            {
+                "plant": plant.name,
+                "task": oneoff_id,
+                "task_name": item.name,
+                "source": source,
+                "when": when.isoformat(),
+            },
+        )
+        self._notify(plant)
+        return True
+
+    @callback
+    def postpone_oneoff(self, subentry_id: str, oneoff_id: str, days: int) -> bool:
+        item = self.plants[subentry_id].oneoff(oneoff_id)
+        if item is None:
+            return False
+        return self.update_oneoff(subentry_id, oneoff_id, due=item.due + timedelta(days=days))
+
+    @staticmethod
+    def _replace_oneoff(plant: PlantRuntime, item: oneoff.OneOff) -> None:
+        plant.oneoffs = [o for o in plant.oneoffs if o.id != item.id] + [item]
+        plant.oneoffs.sort(key=lambda o: o.due)
+
+    def _restore_oneoff(self, plant: PlantRuntime, before: oneoff.OneOff) -> None:
+        """Undo a completion, unless the task was changed or completed again since."""
+        current = plant.oneoff(before.id)
+        after = oneoff.complete(before, dt_util.now().date())
+        if current is None or (after is not None and current.due == after.due):
+            self._replace_oneoff(plant, before)
+
     @callback
     def undo_event(self, subentry_id: str, event_id: str) -> bool:
         plant = self.plants[subentry_id]
         entry = next((e for e in plant.log if e["id"] == event_id), None)
         if entry is None:
             return False
+        if entry["undone"]:
+            return True
         entry["undone"] = True
+        if "oneoff" in entry:
+            self._restore_oneoff(plant, oneoff.from_dict(entry["oneoff"]))
         self._sync_last_done(plant, entry["task"])
         self._notify(plant)
         return True
@@ -1018,51 +1124,66 @@ class RootineManager:
                         "_text": text_item,
                     }
                 )
-            for task in plant.tasks:
-                res = plant.results.get(task.key)
-                if res is None:
-                    continue
-                if res.status == DueStatus.SOON and not include_soon:
-                    continue
-                within = (
-                    days_ahead > 0
-                    and res.days is not None
-                    and 0 < res.days <= days_ahead
-                    and res.status in (DueStatus.OK, DueStatus.SOON)
-                )
-                if (
-                    res.status not in (DueStatus.DUE, DueStatus.OVERDUE, DueStatus.SOON)
-                    and not within
-                ):
-                    continue
-                days = -res.days if res.days is not None and res.days < 0 else 0
-                text_item = TextItem(
-                    plant.name,
-                    task.key,
-                    report_name(task),
-                    res.status.value,
-                    days,
-                    res.reason,
-                    in_days=res.days if within else None,
-                )
-                items.append(
-                    {
-                        "plant": plant.name,
-                        "plant_entity": self.care_entity_id(plant.subentry_id),
-                        "task": task.key,
-                        "task_name": task.name,
-                        "report_name": report_name(task),
-                        "status": res.status.value,
-                        "due": res.next_due.isoformat() if res.next_due else None,
-                        "days": res.days,
-                        "reason": res.reason,
-                        "location": plant.settings.location,
-                        "text": item_text(text_item),
-                        "_text": text_item,
-                    }
-                )
+            entries = [
+                (task.key, task.name, report_name(task), plant.results.get(task.key))
+                for task in plant.tasks
+            ]
+            entries += [
+                (o.id, o.name, o.name, plant.oneoff_results.get(o.id)) for o in plant.oneoffs
+            ]
+            for key, name, spoken, res in entries:
+                item = self._due_entry(plant, key, name, spoken, res, include_soon, days_ahead)
+                if item is not None:
+                    items.append(item)
         items.sort(key=lambda i: (_ITEM_RANK.get(i["status"], 9), i["days"] or 0))
         return items
+
+    def _due_entry(
+        self,
+        plant: PlantRuntime,
+        key: str,
+        name: str,
+        spoken: str,
+        res: DueResult | None,
+        include_soon: bool,
+        days_ahead: int,
+    ) -> dict[str, Any] | None:
+        if res is None or (res.status == DueStatus.SOON and not include_soon):
+            return None
+        within = (
+            days_ahead > 0
+            and res.days is not None
+            and 0 < res.days <= days_ahead
+            and res.status in (DueStatus.OK, DueStatus.SOON)
+        )
+        if res.status not in (DueStatus.DUE, DueStatus.OVERDUE, DueStatus.SOON) and not within:
+            return None
+        days = -res.days if res.days is not None and res.days < 0 else 0
+        # a reminder further ahead than tomorrow reads like the days_ahead preview
+        ahead = res.status == DueStatus.SOON and res.days is not None and res.days > 1
+        text_item = TextItem(
+            plant.name,
+            key,
+            spoken,
+            DueStatus.OK.value if ahead else res.status.value,
+            days,
+            res.reason,
+            in_days=res.days if within or ahead else None,
+        )
+        return {
+            "plant": plant.name,
+            "plant_entity": self.care_entity_id(plant.subentry_id),
+            "task": key,
+            "task_name": name,
+            "report_name": spoken,
+            "status": res.status.value,
+            "due": res.next_due.isoformat() if res.next_due else None,
+            "days": res.days,
+            "reason": res.reason,
+            "location": plant.settings.location,
+            "text": item_text(text_item),
+            "_text": text_item,
+        }
 
     def care_entity_id(self, subentry_id: str) -> str | None:
         from homeassistant.helpers import entity_registry as er
@@ -1119,6 +1240,21 @@ class RootineManager:
                             "summary": f"{plant.name} {task_verb(report_name(task))}",
                             "due": res.next_due,
                             "description": f"{text} {care[:200]}".strip(),
+                        }
+                    )
+            for item in plant.oneoffs:
+                res = plant.oneoff_results.get(item.id)
+                if res is None:
+                    continue
+                reminded = res.status == DueStatus.SOON and (res.days or 0) <= item.remind_days
+                if res.status in (DueStatus.DUE, DueStatus.OVERDUE) or reminded:
+                    entry = self._due_entry(plant, item.id, item.name, item.name, res, True, 0)
+                    entries.append(
+                        {
+                            "uid": f"{plant.subentry_id}:{item.id}:{item.due}",
+                            "summary": f"{plant.name}: {item.name}",
+                            "due": item.due,
+                            "description": entry["text"] if entry else "",
                         }
                     )
         return entries

@@ -124,7 +124,8 @@
             "limits_edit": "Limits",
             "add_task": "Add task",
             "edit_task": "Edit task",
-            "remove_task": "Remove task"
+            "remove_task": "Remove task",
+            "oneoffs": "One-time tasks"
           }
         },
         "general": {
@@ -305,6 +306,46 @@
           "data": {
             "task": "Task"
           }
+        },
+        "oneoffs": {
+          "title": "One-time tasks",
+          "menu_options": {
+            "add_oneoff": "Add a one-time task",
+            "edit_oneoff": "Edit a one-time task",
+            "remove_oneoff": "Delete a one-time task"
+          }
+        },
+        "add_oneoff": {
+          "title": "One-time task",
+          "description": "For example repotting or pruning. When done it goes to the history; a yearly one moves to the next year.",
+          "data": {
+            "name": "Name",
+            "due": "Due on",
+            "yearly": "Repeat every year",
+            "remind_days": "Remind days before"
+          }
+        },
+        "edit_oneoff": {
+          "title": "Edit a one-time task",
+          "data": {
+            "oneoff": "Task"
+          }
+        },
+        "edit_oneoff_form": {
+          "title": "Edit {name}",
+          "description": "For example repotting or pruning. When done it goes to the history; a yearly one moves to the next year.",
+          "data": {
+            "name": "Name",
+            "due": "Due on",
+            "yearly": "Repeat every year",
+            "remind_days": "Remind days before"
+          }
+        },
+        "remove_oneoff": {
+          "title": "Delete a one-time task",
+          "data": {
+            "oneoff": "Task"
+          }
         }
       },
       "error": {
@@ -317,7 +358,8 @@
         "sensor_mode_needs_sensor": "Mode “sensor” needs a moisture sensor.",
         "threshold_required": "Please enter a watering threshold.",
         "task_exists": "This task already exists.",
-        "photo_unresolvable": "This image cannot be shown. Please upload a photo or pick an image from the media library."
+        "photo_unresolvable": "This image cannot be shown. Please upload a photo or pick an image from the media library.",
+        "name_required": "Please enter a name."
       },
       "abort": {
         "reconfigure_successful": "Saved.",
@@ -325,7 +367,8 @@
         "opb_missing": "OpenPlantbook is not installed.",
         "opb_failed": "OpenPlantbook did not answer.",
         "opb_not_linked": "This plant is not linked to OpenPlantbook.",
-        "no_custom_tasks": "There are no additional tasks."
+        "no_custom_tasks": "There are no additional tasks.",
+        "no_oneoffs": "This plant has no one-time tasks."
       }
     }
   },
@@ -482,6 +525,12 @@
     },
     "photo_unresolvable": {
       "message": "This image cannot be shown. Please upload a photo or pick an image from the media library."
+    },
+    "unknown_oneoff": {
+      "message": "This one-time task does not exist."
+    },
+    "name_required": {
+      "message": "Please give a name."
     }
   },
   "services": {
@@ -653,6 +702,76 @@
         },
         "event_id": {
           "name": "Event",
+          "description": ""
+        }
+      }
+    },
+    "add_oneoff": {
+      "name": "Add one-time task",
+      "description": "Adds a one-time task to a plant and returns its ID.",
+      "fields": {
+        "entity_id": {
+          "name": "Plant",
+          "description": ""
+        },
+        "name": {
+          "name": "Name",
+          "description": ""
+        },
+        "due": {
+          "name": "Due on",
+          "description": ""
+        },
+        "yearly": {
+          "name": "Repeat every year",
+          "description": ""
+        },
+        "remind_days": {
+          "name": "Remind days before",
+          "description": ""
+        }
+      }
+    },
+    "update_oneoff": {
+      "name": "Change one-time task",
+      "description": "Changes name, date, repetition or reminder of a one-time task.",
+      "fields": {
+        "entity_id": {
+          "name": "Plant",
+          "description": ""
+        },
+        "oneoff_id": {
+          "name": "One-time task ID",
+          "description": ""
+        },
+        "name": {
+          "name": "Name",
+          "description": ""
+        },
+        "due": {
+          "name": "Due on",
+          "description": ""
+        },
+        "yearly": {
+          "name": "Repeat every year",
+          "description": ""
+        },
+        "remind_days": {
+          "name": "Remind days before",
+          "description": ""
+        }
+      }
+    },
+    "remove_oneoff": {
+      "name": "Delete one-time task",
+      "description": "Deletes a one-time task without writing it to the history.",
+      "fields": {
+        "entity_id": {
+          "name": "Plant",
+          "description": ""
+        },
+        "oneoff_id": {
+          "name": "One-time task ID",
           "description": ""
         }
       }

@@ -17,6 +17,7 @@ from homeassistant.helpers import entity_registry as er
 
 from . import openplantbook
 from .const import DOMAIN, SOURCE_SERVICE
+from .logic.oneoff import REMIND_MAX
 from .logic.profile import apply_opb, parse_opb, update_fields
 from .manager import PlantRuntime, RootineManager
 from .photo import PhotoUnresolvable
@@ -73,6 +74,27 @@ HISTORY = vol.Schema(
     {**_ENTITY, vol.Optional("limit", default=50): vol.All(int, vol.Range(1, 200))}
 )
 UNDO = vol.Schema({**_ENTITY, vol.Required("event_id"): cv.string})
+_REMIND = vol.All(vol.Coerce(int), vol.Range(0, REMIND_MAX))
+ADD_ONEOFF = vol.Schema(
+    {
+        **_ENTITY,
+        vol.Required("name"): cv.string,
+        vol.Required("due"): cv.date,
+        vol.Optional("yearly", default=False): cv.boolean,
+        vol.Optional("remind_days", default=0): _REMIND,
+    }
+)
+UPDATE_ONEOFF = vol.Schema(
+    {
+        **_ENTITY,
+        vol.Required("oneoff_id"): cv.string,
+        vol.Optional("name"): cv.string,
+        vol.Optional("due"): cv.date,
+        vol.Optional("yearly"): cv.boolean,
+        vol.Optional("remind_days"): _REMIND,
+    }
+)
+REMOVE_ONEOFF = vol.Schema({**_ENTITY, vol.Required("oneoff_id"): cv.string})
 
 
 def _fail(key: str, **placeholders: str) -> ServiceValidationError:
@@ -94,9 +116,16 @@ def _resolve(hass: HomeAssistant, entity_id: str) -> tuple[RootineManager, Plant
 
 
 def _task(plant: PlantRuntime, key: str) -> str:
-    if not plant.has_task(key):
+    """A task key or the id of a one-time task."""
+    if not plant.has_task(key) and plant.oneoff(key) is None:
         raise _fail("unknown_task", task=key)
     return key
+
+
+def _oneoff_name(value: str) -> str:
+    if not value.strip():
+        raise _fail("name_required")
+    return value.strip()
 
 
 def _photo_id(value: Any) -> str | None:
@@ -115,9 +144,11 @@ async def _set_photo(manager: RootineManager, plant: PlantRuntime, value: Any) -
 def async_register_services(hass: HomeAssistant) -> None:
     async def mark_done(call: ServiceCall) -> None:
         manager, plant = _resolve(hass, call.data["entity_id"])
-        manager.mark_done(
+        key = _task(plant, call.data["task"])
+        done = manager.complete_oneoff if plant.oneoff(key) else manager.mark_done
+        done(
             plant.subentry_id,
-            _task(plant, call.data["task"]),
+            key,
             SOURCE_SERVICE,
             when=call.data.get("when"),
             note=call.data.get("note"),
@@ -125,7 +156,37 @@ def async_register_services(hass: HomeAssistant) -> None:
 
     async def postpone(call: ServiceCall) -> None:
         manager, plant = _resolve(hass, call.data["entity_id"])
-        manager.postpone(plant.subentry_id, _task(plant, call.data["task"]), call.data["days"])
+        key = _task(plant, call.data["task"])
+        if plant.oneoff(key):
+            manager.postpone_oneoff(plant.subentry_id, key, call.data["days"])
+        else:
+            manager.postpone(plant.subentry_id, key, call.data["days"])
+
+    async def add_oneoff(call: ServiceCall) -> ServiceResponse:
+        manager, plant = _resolve(hass, call.data["entity_id"])
+        item = manager.add_oneoff(
+            plant.subentry_id,
+            _oneoff_name(call.data["name"]),
+            call.data["due"],
+            call.data["yearly"],
+            call.data["remind_days"],
+        )
+        return {"id": item.id}
+
+    async def update_oneoff(call: ServiceCall) -> None:
+        manager, plant = _resolve(hass, call.data["entity_id"])
+        changes = {
+            k: call.data[k] for k in ("name", "due", "yearly", "remind_days") if k in call.data
+        }
+        if "name" in changes:
+            changes["name"] = _oneoff_name(changes["name"])
+        if not manager.update_oneoff(plant.subentry_id, call.data["oneoff_id"], **changes):
+            raise _fail("unknown_oneoff")
+
+    async def remove_oneoff(call: ServiceCall) -> None:
+        manager, plant = _resolve(hass, call.data["entity_id"])
+        if not manager.remove_oneoff(plant.subentry_id, call.data["oneoff_id"]):
+            raise _fail("unknown_oneoff")
 
     async def get_due(call: ServiceCall) -> ServiceResponse:
         managers = [
@@ -184,6 +245,9 @@ def async_register_services(hass: HomeAssistant) -> None:
         ("set_photo", set_photo, SET_PHOTO, None),
         ("get_history", get_history, HISTORY, SupportsResponse.ONLY),
         ("undo_event", undo_event, UNDO, None),
+        ("add_oneoff", add_oneoff, ADD_ONEOFF, SupportsResponse.OPTIONAL),
+        ("update_oneoff", update_oneoff, UPDATE_ONEOFF, None),
+        ("remove_oneoff", remove_oneoff, REMOVE_ONEOFF, None),
     ):
         hass.services.async_register(
             DOMAIN,

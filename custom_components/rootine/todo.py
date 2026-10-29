@@ -61,6 +61,8 @@ class CareTodoList(RootineHubEntity, TodoListEntity):
             self.manager.acknowledge_warning(subentry_id, key)
         elif plant.has_task(key):
             self.manager.mark_done(subentry_id, key, SOURCE_TODO)
+        elif plant.oneoff(key):
+            self.manager.complete_oneoff(subentry_id, key, SOURCE_TODO)
         else:
             raise ServiceValidationError(
                 translation_domain=DOMAIN, translation_key="unknown_todo_item"

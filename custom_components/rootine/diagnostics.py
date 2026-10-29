@@ -8,6 +8,7 @@ from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
+from .logic import oneoff
 from .store import profile_to_dict, settings_to_dict
 
 TO_REDACT: set[str] = set()  # nothing secret today; kept for future fields
@@ -55,6 +56,7 @@ async def async_get_config_entry_diagnostics(
                 }
                 for key, res in plant.results.items()
             },
+            "oneoffs": [oneoff.to_dict(o) for o in plant.oneoffs],
             "log": plant.log[-20:],
         }
     return async_redact_data(
