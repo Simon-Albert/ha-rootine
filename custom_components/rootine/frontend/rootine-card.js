@@ -17,7 +17,7 @@ const T = {
     reason: { cold_now: "zu kalt", cold_forecast: "Kälte erwartet", heat_now: "zu heiß",
       heat_forecast: "Hitze erwartet", drop: "Wert stark gefallen", stale: "meldet nicht",
       battery_low: "Batterie schwach" },
-    done: "Erledigt", noFertilize: "Düngen", noFertilizeHint: "nicht nötig", noOther: "Weitere Aufgaben", noOtherHint: "keine", water: "Gegossen", fertilize: "Gedüngt", postpone: "Verschieben",
+    done: "Erledigt", noFertilize: "Düngen", noFertilizeHint: "nicht nötig", noOther: "Weitere Aufgaben", tabOverview: "Übersicht", tabCare: "Pflege", tabLog: "Verlauf", tabProfile: "Steckbrief", noCare: "Noch keine Pflegetexte. Unter „Bearbeiten“ ergänzen.", noOtherHint: "keine", water: "Gegossen", fertilize: "Gedüngt", postpone: "Verschieben",
     days: (n) => (n === 0 ? "heute" : n === 1 ? "morgen" : n < 0 ? `seit ${-n} Tg.` : `in ${n} Tg.`),
     details: "Details", close: "Schließen", edit: "Bearbeiten", save: "Speichern", cancel: "Abbrechen",
     photo: "Foto ändern", history: "Verlauf", undo: "Rückgängig", undone: "rückgängig",
@@ -45,7 +45,7 @@ const T = {
     reason: { cold_now: "too cold", cold_forecast: "cold expected", heat_now: "too hot",
       heat_forecast: "heat expected", drop: "value dropped", stale: "not reporting",
       battery_low: "battery low" },
-    done: "Done", noFertilize: "Fertilize", noFertilizeHint: "not needed", noOther: "Other tasks", noOtherHint: "none", water: "Watered", fertilize: "Fertilized", postpone: "Postpone",
+    done: "Done", noFertilize: "Fertilize", noFertilizeHint: "not needed", noOther: "Other tasks", tabOverview: "Overview", tabCare: "Care", tabLog: "History", tabProfile: "Profile", noCare: "No care notes yet. Add them under Edit.", noOtherHint: "none", water: "Watered", fertilize: "Fertilized", postpone: "Postpone",
     days: (n) => (n === 0 ? "today" : n === 1 ? "tomorrow" : n < 0 ? `${-n}d overdue` : `in ${n}d`),
     details: "Details", close: "Close", edit: "Edit", save: "Save", cancel: "Cancel",
     photo: "Change photo", history: "History", undo: "Undo", undone: "undone",
@@ -153,7 +153,7 @@ svg.chart { width: 100%; height: 130px; display: block; }
 .legend { margin-top: 6px; display: flex; gap: 12px; font-size: .8em; color: var(--secondary-text-color); }
 .overlay { position: fixed; inset: 0; z-index: 9; background: rgba(0,0,0,.55); backdrop-filter: blur(4px); display: flex;
   align-items: center; justify-content: center; padding: 12px; animation: fade .18s ease; }
-.dialog { --accent: var(--primary-color); width: min(760px, 100%); max-height: 92vh; overflow: auto; border-radius: 24px; padding: 0;
+.dialog { --accent: var(--primary-color); width: min(760px, 100%); height: min(780px, 92vh); overflow: hidden; border-radius: 24px; padding: 0;
   background: var(--ha-card-background, var(--card-background-color)); color: var(--primary-text-color);
   backdrop-filter: blur(16px); display: flex; flex-direction: column; gap: 0; box-shadow: 0 24px 60px rgba(0,0,0,.45);
   animation: rise .22s ease; }
@@ -170,7 +170,12 @@ svg.chart { width: 100%; height: 130px; display: block; }
 .hero .chip { font-size: .85em; padding: 3px 12px; }
 .hero .x { position: absolute; top: 12px; right: 12px; width: 34px; height: 34px; padding: 0; border-radius: 50%; font-size: 1.2em; line-height: 1;
   background: color-mix(in srgb, var(--primary-text-color) 12%, transparent); border-color: transparent; }
-.body { display: flex; flex-direction: column; gap: 14px; padding: 6px 20px 20px; }
+.body { display: flex; flex-direction: column; gap: 14px; padding: 6px 20px 20px; flex: 1; min-height: 0; overflow: auto; }
+.panel { display: flex; flex-direction: column; gap: 14px; }
+[hidden] { display: none !important; }
+.tabs { display: flex; gap: 6px; padding: 4px 20px 10px; flex: none; }
+.tabs button { border-radius: 999px; padding: 6px 16px; background: transparent; }
+.tabs button.on { background: var(--accent); color: #fff; border-color: transparent; font-weight: 600; }
 .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
 .tile { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 14px; border: 1px solid transparent;
   background: color-mix(in srgb, var(--primary-text-color) 6%, transparent); }
@@ -194,7 +199,8 @@ svg.chart { width: 100%; height: 130px; display: block; }
 .timeline .t { flex: 1; } .timeline .t b { font-weight: 600; }
 @media (max-width: 560px) {
   .overlay { align-items: flex-end; padding: 0; }
-  .dialog { width: 100%; max-height: 94vh; border-radius: 24px 24px 0 0; }
+  .dialog { width: 100%; height: 94vh; border-radius: 24px 24px 0 0; }
+  .tabs { padding: 2px 14px 8px; overflow-x: auto; }
   .hero { padding: 18px 16px 14px; } .hero .pic { width: 72px; height: 72px; } .hero .title .name { font-size: 1.35em; }
   .body { padding: 4px 14px 18px; }
 }
@@ -326,9 +332,9 @@ class RootineCard extends HTMLElement {
            <button class="${this._filter === "needs" ? "" : "ghost"}" data-filter="needs">${t.needs}</button>
            <button class="${this._filter === "all" ? "" : "ghost"}" data-filter="all">${t.all}</button></div></div>`
       : "";
-    const keep = this.shadowRoot.querySelector(".dialog")?.scrollTop || 0;
+    const keep = this.shadowRoot.querySelector(".dialog .body")?.scrollTop || 0;
     this.shadowRoot.innerHTML = `<style>${STYLE}</style><ha-card class="${this._compact ? "compact" : ""}">${head}${body}</ha-card>${this._dialog ? this._dialogHtml() : ""}${this._confirm ? this._confirmHtml() : ""}`;
-    if (keep) { const dlg = this.shadowRoot.querySelector(".dialog"); if (dlg) dlg.scrollTop = keep; }
+    if (keep) { const dlg = this.shadowRoot.querySelector(".dialog .body"); if (dlg) dlg.scrollTop = keep; }
     this._bind();
     if (this._dialog) this._afterDialog();
     if (this._confirm) this._afterConfirm();
@@ -549,6 +555,7 @@ class RootineCard extends HTMLElement {
     const a = st.attributes, p = a.profile;
     const name = a.friendly_name?.replace(/ (Pflegestatus|Care status)$/i, "") || d.id;
     const accent = COLORS[st.state] || COLORS.unknown;
+    const tab = d.tab || "overview";
     const pic = a.entity_picture ? `<img class="pic" src="${esc(a.entity_picture)}" alt="">` : `<div class="pic">🌱</div>`;
     const bg = a.entity_picture ? `<div class="bg" style="background-image:url('${esc(a.entity_picture)}')"></div>` : "";
     const taskOptions = this._items(a).map((i) => `<option value="${esc(i.key)}">${esc(i.name)}</option>`).join("");
@@ -559,7 +566,7 @@ class RootineCard extends HTMLElement {
     const plainFields = PROFILE_FIELDS.filter((f) => !careFields.includes(f));
     const facts = plainFields.map((f) => kv(t.fields[f], p[f] ?? "", false)).join("");
     const care = careFields.filter((f) => p[f]).map((f) => `<div><div class="k">${esc(t.fields[f])}</div>${markdown(p[f])}</div>`).join("");
-    const view = `${facts ? `<div class="sec"><h3>${t.edit === "Bearbeiten" ? "Steckbrief" : "Profile"}</h3><dl class="kv">${facts}</dl></div>` : ""}${care ? `<div class="care">${care}</div>` : ""}`;
+    const factsHtml = facts ? `<div class="sec"><h3>${t.tabProfile}</h3><dl class="kv">${facts}</dl></div>` : "";
     const form = `<form class="edit sec" data-form>${PROFILE_FIELDS.map((f) => {
       const multi = f.startsWith("care.") || f === "notes";
       return `<label>${esc(t.fields[f])}</label>${multi ? `<textarea name="${f}" rows="3">${esc(p[f] ?? "")}</textarea>` : `<input name="${f}" value="${esc(p[f] ?? "")}">`}`;
@@ -569,17 +576,23 @@ class RootineCard extends HTMLElement {
     return `<div class="overlay" data-overlay><div class="dialog" style="--accent:${accent}">
       <div class="hero">${bg}${pic}<div class="title"><div class="name">${esc(name)}</div><div class="sub">${esc([p.common_name, p.species].filter(Boolean).join(" · "))}</div>${this._chip(st.state)}</div>
         <button class="ghost x" data-close aria-label="${t.close}">✕</button></div>
+      <div class="tabs" role="tablist">${[["overview", t.tabOverview], ["care", t.tabCare], ["log", t.tabLog]].map(([k, l]) => `<button class="${tab === k ? "on" : "ghost"}" role="tab" aria-selected="${tab === k}" data-tab="${k}">${esc(l)}</button>`).join("")}</div>
       <div class="body">
+      <div class="panel" data-panel="overview" ${tab === "overview" || d.edit ? "" : "hidden"}>
       ${tiles ? `<div class="tiles">${tiles}</div>` : ""}
       <div class="toolbar"><button data-photo>📷 ${t.photo}</button><input type="file" accept="image/*" data-file hidden>
         ${locSelect ? `<select data-location>${["outdoor", "indoor"].map((o) => `<option value="${o}" ${this._hass.states[locSelect].state === o ? "selected" : ""}>${t[o]}</option>`).join("")}</select>` : ""}
         <button class="ghost" data-edit>✎ ${t.edit}</button></div>
-      ${d.edit ? form : view}
-      ${d.chart ? `<div class="sec">${this._chartSvg(d.chart)}</div>` : ""}
+      ${d.edit ? form : factsHtml}
+      ${d.chart && !d.edit ? `<div class="sec">${this._chartSvg(d.chart)}</div>` : ""}
+      </div>
+      <div class="panel" data-panel="care" ${tab === "care" && !d.edit ? "" : "hidden"}>${care ? `<div class="care">${care}</div>` : `<div class="muted">${t.noCare}</div>`}</div>
+      <div class="panel" data-panel="log" ${tab === "log" && !d.edit ? "" : "hidden"}>
       <div class="sec"><h3>${t.postpone} / ${t.backfill}</h3>
       <div class="row"><select data-task>${taskOptions}</select><input type="date" data-date value="${new Date().toISOString().slice(0, 10)}">
         <button data-backfill>${t.backfill}</button><input type="number" min="1" max="60" value="1" data-days style="max-width:5em"><button data-postpone>${t.postpone}</button></div></div>
-      ${log ? `<div class="sec"><h3>${t.history}</h3><div class="timeline">${log}</div></div>` : ""}</div></div></div>`;
+      ${log ? `<div class="sec"><h3>${t.history}</h3><div class="timeline">${log}</div></div>` : ""}</div>
+      </div></div></div>`;
   }
 
   _afterDialog() {
@@ -587,6 +600,7 @@ class RootineCard extends HTMLElement {
     const q = (s) => root.querySelector(s);
     q("[data-close]")?.addEventListener("click", () => this._close());
     q("[data-overlay]")?.addEventListener("click", (e) => { if (e.target.dataset.overlay !== undefined) this._close(); });
+    root.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => { d.tab = b.dataset.tab; d.edit = false; this._render(); }));
     q("[data-edit]")?.addEventListener("click", () => { d.edit = !d.edit; this._render(); });
     q("[data-cancel]")?.addEventListener("click", () => { d.edit = false; this._render(); });
     q("[data-edit]")?.setAttribute("aria-pressed", d.edit ? "true" : "false");

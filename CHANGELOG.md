@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.4
+
+**Geändert**
+
+- Der Details-Dialog hat bei jeder Pflanze dieselbe Größe und drei Reiter: Übersicht (Aufgaben, Steckbrief, Diagramm), Pflege (Pflegetexte) und Verlauf (Verschieben, Nachtragen, Verlauf). Lange Texte scrollen nur im Inhalt, der Kopf mit Foto und Name bleibt stehen.
+
 ## 1.2.3
 
 **Geändert**
