@@ -1,8 +1,41 @@
 # Changelog
 
+## 1.2.0
+
+**Neu**
+
+- **Einmalige Aufgaben** pro Pflanze: Name und Datum, optional jährlich wiederholen und x Tage vorher erinnern.
+  Anlegen, bearbeiten und löschen im Menü der Pflanze oder per `rootine.add_oneoff`, `rootine.update_oneoff`,
+  `rootine.remove_oneoff`. Sie erscheinen im Pflegestatus, in der To-do-Liste, in `get_due`, in den Berichtstexten
+  und in der Karte. Erledigt landen sie im Verlauf; einmalige verschwinden, jährliche springen aufs nächste Jahr.
+  `mark_done`, `postpone` und „Rückgängig“ funktionieren auch für sie.
+- **Reparaturhinweise** unter Einstellungen → Reparaturen, wenn ein verknüpfter Sensor, ein Ventil, der Regensensor,
+  die Wetter-Entität oder der Außensensor fehlt, umbenannt oder deaktiviert wurde. „Beheben“ führt zu einem Formular
+  für die neue Entität; der Hinweis verschwindet von selbst, sobald die Entität wieder da ist.
+- **Grenzwerte abschaltbar:** Kälteschutz, Hitzeschutz und „zu nass“ haben je einen Schalter. Beim Ausschalten wird
+  der Wert gemerkt, beim Einschalten wieder gesetzt. Wird eine Grenze eingeschaltet, holt Rootine die Vorhersage sofort.
+- **Karte:** „Alles gegossen“ in der Übersicht für alle Pflanzen mit fälligem oder überfälligem Gießen, mit Rückfrage,
+  die die Pflanzen nennt. Kompaktmodus `layout: compact` mit einer Zeile pro Pflanze für schmale Spalten.
+  Einmalige Aufgaben mit eigenem Knopf und im Verlauf.
+
+**Geändert**
+
+- **Regen aus Zuwächsen:** Regen pro Tag ist jetzt die Summe der Anstiege des Sensors, dem Ortsdatum der Messung
+  zugeordnet. Ein Rückgang ist eine Rücksetzung, der Wert beim Start nur Ausgangspunkt. Regenmesser mit Tageswechsel
+  um Mitternacht UTC zählen damit nach einem Neustart oder einer Meldung kurz nach Mitternacht nicht mehr die ganze
+  Vortagssumme als heutigen Regen. Beim ersten Start füllt Rootine aus `daily_history` vor (nach UTC-Tagen, Näherung).
+- **Gespeicherte Daten** haben eine Versionsnummer und werden beim Update automatisch umgestellt
+  (im Test mit einem nachgebauten gespeicherten Stand von 1.1.0 geprüft).
+
+**Entwicklung**
+
+- Synthetische Testdaten neu erfunden (andere Uhrzeiten, Mengen und Abläufe), dazu ein Regenzähler mit Rücksetzung
+  um Mitternacht UTC; Erwartungen neu aus dem Orakel. Tests gegen die Echtdaten liegen nur noch lokal.
+- Tests für die OpenPlantbook-Anbindung und die To-do-Liste vervollständigt; alle Code-Kommentare auf Englisch.
+
 ## 1.1.1
 
-Korrekturen aus dem Test im echten System.
+Korrekturen nach einem Review.
 
 **Behoben**
 

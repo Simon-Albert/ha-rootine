@@ -23,12 +23,16 @@ species data optionally from OpenPlantbook.
 - Subentry = structure (form, reload). Store = everyday values (profile, photo, location, limits,
   last done, history, samples); changing them never reloads the entry.
 - Actions are registered in `async_setup`, not in `async_setup_entry`.
+- One-time tasks (`logic/oneoff.py`) live in the store, not in the subentry, so changing them never reloads.
+- `repairs.py`: repair issues for missing linked entities and their fix flow; checks start once HA has started.
+- Store data is versioned (`STORE_MINOR_VERSION`); every new stored field needs a migration in `store.migrate`.
 - The dashboard card is a single plain JS file (`frontend/rootine-card.js`), served by the integration.
 
 ## Rules
 
-- No real data, entity IDs or personal details in the repository. Real fixtures (`tests/fixtures/*.csv`)
-  stay local and are git-ignored; CI uses `tests/fixtures_synthetic/`.
+- No real data, entity IDs or personal details in the repository. Real fixtures (`tests/fixtures/`) and tests
+  holding values derived from them (`tests/**/*_local.py`) stay local and are git-ignored; CI uses
+  `tests/fixtures_synthetic/`, whose times and amounts are invented.
 - Expected values in tests come from the oracles (`tests/fixtures_synthetic/reference.py`), never from
   the integration. If they disagree, find out which side is wrong first.
 - Every bug gets a failing test first, then the fix.
