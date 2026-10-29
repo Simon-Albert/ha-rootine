@@ -79,7 +79,9 @@ def _timeline(data: Dataset) -> list[tuple[datetime, str, str]]:
     with (data.directory / "rain_daily.csv").open(newline="") as handle:
         for row in csv.DictReader(handle):
             day = datetime.fromisoformat(row["date"]).replace(tzinfo=TZ)
-            events.append((day.replace(hour=0, minute=5), "sensor.rain", row["mm"]))
+            # a daily-total sensor: reset, then the day's rain as one increment
+            events.append((day.replace(hour=0, minute=5), "sensor.rain", "0"))
+            events.append((day.replace(hour=0, minute=6), "sensor.rain", row["mm"]))
     events.sort(key=lambda e: e[0])
     return events
 

@@ -9,14 +9,38 @@ DEFAULT_THRESHOLD_MM = 5.0
 CLASSIFY_THRESHOLD_MM = 2.0
 
 
-def record_rain(rain_days: dict[str, float], day: date, value: float) -> dict[str, float]:
-    """Tagesmaximum je Datum merken, höchstens 60 Tage behalten."""
+def add_reading(
+    rain_days: dict[str, float], base: float | None, day: date, value: float
+) -> tuple[dict[str, float], float]:
+    """Add one reading of a daily-total rain sensor (state_class total_increasing).
+
+    Rain of a local date is the sum of the positive increments whose timestamp falls on that
+    date. A lower value is a reset (new base, no rain); many sensors reset at midnight UTC,
+    not at local midnight, and show the previous day's total until then. The first reading
+    after a start is only a base. Returns the updated days and the new base.
+    """
+    if base is None or value <= base:
+        return rain_days, value
     updated = dict(rain_days)
     key = day.isoformat()
-    updated[key] = max(updated.get(key, 0.0), value)
+    updated[key] = round(updated.get(key, 0.0) + value - base, 3)
     for old in sorted(updated)[:-RAIN_DAYS_KEPT]:
         del updated[old]
-    return updated
+    return updated, value
+
+
+def prefill_from_history(history: list[dict] | None) -> dict[str, float]:
+    """Daily totals from an attribute like Rain Warner's daily_history ([{date, mm}]).
+
+    Approximation: those days are UTC days, not local days.
+    """
+    result: dict[str, float] = {}
+    for item in history or []:
+        try:
+            result[date.fromisoformat(str(item["date"])).isoformat()] = float(item["mm"])
+        except (KeyError, TypeError, ValueError):
+            continue
+    return dict(sorted(result.items())[-RAIN_DAYS_KEPT:])
 
 
 def effective_rain(

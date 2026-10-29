@@ -123,7 +123,7 @@ def test_rain_mode():
     day = date(2030, 4, 2)
     while day <= date(2030, 4, 29):
         for d in (day - timedelta(days=1), day):
-            recorded = rain.record_rain(recorded, d, daily[d])
+            recorded[d.isoformat()] = daily[d]  # daily totals per local date
         if rain.rain_resets(recorded, day, state.last_done, state.rain_at_done):
             resets.append(day.strftime("%d.%m."))
             state = TaskState(

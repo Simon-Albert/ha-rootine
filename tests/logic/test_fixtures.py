@@ -149,10 +149,8 @@ def test_rain_mode_cherry():
     resets, statuses = [], {}
     day = date(2025, 10, 1)
     while day <= date(2025, 10, 29):
-        rain_days = rain.record_rain(
-            rain_days, day - timedelta(days=1), daily[day - timedelta(days=1)]
-        )
-        rain_days = rain.record_rain(rain_days, day, daily[day])  # 00:05: volle Tagessumme
+        for d in (day - timedelta(days=1), day):
+            rain_days[d.isoformat()] = daily[d]  # daily totals per local date
         if rain.rain_resets(rain_days, day, state.last_done, state.rain_at_done):
             resets.append(day)
             state = TaskState(

@@ -50,17 +50,6 @@ def test_classify():
     assert rain.classify_water_event(valve_match=False, rain_today_and_yesterday=1.99) == "sensor"
 
 
-def test_record_rain_keeps_max_and_prunes():
-    days = {}
-    d0 = date(2026, 1, 1)
-    for i in range(70):
-        days = rain.record_rain(days, d0 + timedelta(days=i), 1.0)
-    assert len(days) == 60
-    days = rain.record_rain(days, d0 + timedelta(days=69), 3.0)
-    days = rain.record_rain(days, d0 + timedelta(days=69), 0.0)  # Reset um Mitternacht
-    assert days[(d0 + timedelta(days=69)).isoformat()] == 3.0
-
-
 def test_effective_rain_window_and_baseline():
     days = {"2026-10-14": 2.0, "2026-10-15": 1.0, "2026-10-16": 4.5}
     done = datetime(2026, 10, 15, 8, tzinfo=TZ)

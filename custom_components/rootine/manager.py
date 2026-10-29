@@ -194,6 +194,7 @@ class RootineManager:
         self._raw: dict[str, Any] = {"plants": {}, "rain_days": {}}
         self.plants: dict[str, PlantRuntime] = {}
         self.rain_days: dict[str, float] = {}
+        self._rain_base: float | None = None  # last reading of the rain sensor (not stored)
         self._unsub: list[CALLBACK_TYPE] = []
         self._forecast: list[dict[str, Any]] = []
         self._forecast_at: datetime | None = None
@@ -304,9 +305,11 @@ class RootineManager:
     def _read_initial_states(self) -> None:
         """Pick up current values after a start (no event detection on these)."""
         rain_state = self.hass.states.get(self.rain_entity) if self.rain_entity else None
-        value = _as_float(rain_state)
-        if value is not None:
-            self._record_rain(value)
+        # the value at start is only the base: after a restart shortly past midnight it may
+        # still be yesterday's total (many sensors reset at midnight UTC)
+        self._rain_base = _as_float(rain_state)
+        if not self.rain_days and rain_state is not None:
+            self.rain_days = rain.prefill_from_history(rain_state.attributes.get("daily_history"))
         self._outdoor_temp = _as_float(self._state(self.options.get(CONF_OUTDOOR_TEMP_ENTITY)))
         for plant in self.plants.values():
             self._read_plant_states(plant)
@@ -398,15 +401,16 @@ class RootineManager:
 
     # --- event handlers ----------------------------------------------------------------
 
-    def _record_rain(self, value: float) -> None:
-        self.rain_days = rain.record_rain(self.rain_days, dt_util.now().date(), value)
-
     @callback
     def _on_rain(self, event: Event[EventStateChangedData]) -> None:
-        value = _as_float(event.data["new_state"])
-        if value is None:
-            return
-        self._record_rain(value)
+        new = event.data["new_state"]
+        value = _as_float(new)
+        if value is None or new is None:
+            return  # unavailable keeps the base; a lower value afterwards is a reset
+        day = dt_util.as_local(new.last_updated).date()
+        self.rain_days, self._rain_base = rain.add_reading(
+            self.rain_days, self._rain_base, day, value
+        )
         self.recompute_all()
         self._persist()
 
