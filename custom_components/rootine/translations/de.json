@@ -1,0 +1,593 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Rootine",
+        "description": "Pflegeroutinen für Pflanzen. Die Angaben sind optional und gelten als Standard für alle Pflanzen.",
+        "data": {
+          "rain_entity": "Regensensor (Tagessumme)",
+          "rain_threshold": "Regenschwelle",
+          "default_location": "Standard-Standort neuer Pflanzen",
+          "weather_entity": "Wetter (Vorhersage)",
+          "outdoor_temp_entity": "Außentemperatur"
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Rootine ist schon eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Rootine",
+        "data": {
+          "rain_entity": "Regensensor (Tagessumme)",
+          "rain_threshold": "Regenschwelle",
+          "default_location": "Standard-Standort neuer Pflanzen",
+          "weather_entity": "Wetter (Vorhersage)",
+          "outdoor_temp_entity": "Außentemperatur"
+        }
+      }
+    }
+  },
+  "config_subentries": {
+    "plant": {
+      "initiate_flow": {
+        "user": "Pflanze hinzufügen",
+        "reconfigure": "Pflanze bearbeiten"
+      },
+      "entry_type": "Pflanze",
+      "step": {
+        "user": {
+          "title": "Neue Pflanze",
+          "data": {
+            "name": "Name",
+            "location": "Standort",
+            "search": "Art bei OpenPlantbook suchen (optional)"
+          }
+        },
+        "profile": {
+          "title": "Steckbrief",
+          "description": "Alles ist optional und später änderbar.\nBild: {image}",
+          "data": {
+            "common_name": "Name der Art",
+            "species": "Wissenschaftlicher Name",
+            "cultivar": "Sorte",
+            "rootstock": "Unterlage",
+            "pot": "Topf",
+            "acquired": "Herkunft",
+            "care_watering": "Pflege: Gießen",
+            "care_sunlight": "Pflege: Licht",
+            "care_soil": "Pflege: Erde",
+            "care_pruning": "Pflege: Schnitt",
+            "care_fertilization": "Pflege: Düngen",
+            "notes": "Notizen",
+            "photo": "Foto"
+          }
+        },
+        "water": {
+          "title": "Gießen",
+          "description": "Pflegetext: {care}\n\nEine Zeile pro Zeitraum, z. B. `01.03.–31.10.: 6`. `Pause` oder `ganzjährig: 7` sind möglich.",
+          "data": {
+            "schedule_text": "Plan",
+            "last_done": "Zuletzt gegossen am",
+            "mode": "Modus",
+            "moisture_threshold": "Gieß-Schwelle (%)",
+            "moisture_method": "Bewertung der Feuchte",
+            "valve_counts_as_watering": "Ventillauf zählt als gegossen"
+          }
+        },
+        "fertilize": {
+          "title": "Düngen",
+          "description": "Pflegetext: {care}\n\nLeer lassen = kein Düngen.\n\nEine Zeile pro Zeitraum, z. B. `01.03.–31.10.: 6` und `01.11.–28.02.: 8`. `Pause` oder `ganzjährig: 7` sind möglich.",
+          "data": {
+            "schedule_text": "Plan",
+            "last_done": "Zuletzt gedüngt am"
+          }
+        },
+        "reconfigure": {
+          "title": "Pflanze bearbeiten",
+          "menu_options": {
+            "general": "Allgemein",
+            "profile_edit": "Steckbrief",
+            "photo": "Foto",
+            "water_edit": "Gießen",
+            "fertilize_edit": "Düngen",
+            "openplantbook": "OpenPlantbook",
+            "sensors_edit": "Sensoren",
+            "limits_edit": "Grenzwerte",
+            "add_task": "Weitere Aufgabe hinzufügen",
+            "edit_task": "Aufgabe bearbeiten",
+            "remove_task": "Aufgabe entfernen"
+          }
+        },
+        "general": {
+          "title": "Allgemein",
+          "data": {
+            "name": "Name",
+            "location": "Standort"
+          }
+        },
+        "profile_edit": {
+          "title": "Steckbrief",
+          "data": {
+            "common_name": "Name der Art",
+            "species": "Wissenschaftlicher Name",
+            "cultivar": "Sorte",
+            "rootstock": "Unterlage",
+            "pot": "Topf",
+            "acquired": "Herkunft",
+            "care_watering": "Pflege: Gießen",
+            "care_sunlight": "Pflege: Licht",
+            "care_soil": "Pflege: Erde",
+            "care_pruning": "Pflege: Schnitt",
+            "care_fertilization": "Pflege: Düngen",
+            "notes": "Notizen",
+            "photo": "Foto"
+          }
+        },
+        "photo": {
+          "title": "Foto",
+          "data": {
+            "photo": "Foto"
+          },
+          "description": "Leer lassen und speichern entfernt das Foto."
+        },
+        "water_edit": {
+          "title": "Gießen",
+          "description": "Pflegetext: {care}\n\nEine Zeile pro Zeitraum, z. B. `01.03.–31.10.: 6`. `Pause` oder `ganzjährig: 7` sind möglich.",
+          "data": {
+            "schedule_text": "Plan",
+            "mode": "Modus",
+            "moisture_threshold": "Gieß-Schwelle (%)",
+            "moisture_method": "Bewertung der Feuchte",
+            "valve_counts_as_watering": "Ventillauf zählt als gegossen"
+          }
+        },
+        "fertilize_edit": {
+          "title": "Düngen",
+          "description": "Pflegetext: {care}\n\nLeer lassen = kein Düngen.\n\nEine Zeile pro Zeitraum, z. B. `01.03.–31.10.: 6` und `01.11.–28.02.: 8`. `Pause` oder `ganzjährig: 7` sind möglich.",
+          "data": {
+            "schedule_text": "Plan"
+          }
+        },
+        "search": {
+          "title": "Art suchen",
+          "data": {
+            "search": "Suchbegriff"
+          }
+        },
+        "species": {
+          "title": "Art auswählen",
+          "description": "{found} Treffer.",
+          "data": {
+            "species": "Art"
+          }
+        },
+        "sensors": {
+          "title": "Sensoren",
+          "description": "Alles optional. Ohne Feuchtesensor läuft die Pflanze nach Plan.",
+          "data": {
+            "moisture_entity": "Feuchtesensor",
+            "temperature_entity": "Temperatursensor",
+            "battery_entity": "Batterie",
+            "valve_entity": "Bewässerungsventil"
+          }
+        },
+        "sensors_edit": {
+          "title": "Sensoren",
+          "data": {
+            "moisture_entity": "Feuchtesensor",
+            "temperature_entity": "Temperatursensor",
+            "battery_entity": "Batterie",
+            "valve_entity": "Bewässerungsventil"
+          }
+        },
+        "limits": {
+          "title": "Grenzwerte",
+          "description": "Alle optional. OpenPlantbook empfiehlt {hint} (Wohlfühlbereich, nicht für Frostschutz gedacht).",
+          "data": {
+            "temp_min": "Kälteschutz ab (°C)",
+            "temp_max": "Hitzeschutz ab (°C)",
+            "moisture_max": "Zu nass ab (%)",
+            "rain_threshold": "Eigene Regenschwelle (mm)"
+          }
+        },
+        "limits_edit": {
+          "title": "Grenzwerte",
+          "description": "Leeres Feld = aus.",
+          "data": {
+            "temp_min": "Kälteschutz ab (°C)",
+            "temp_max": "Hitzeschutz ab (°C)",
+            "moisture_max": "Zu nass ab (%)",
+            "rain_threshold": "Eigene Regenschwelle (mm)"
+          }
+        },
+        "openplantbook": {
+          "title": "OpenPlantbook",
+          "menu_options": {
+            "opb_search": "Art suchen und verknüpfen",
+            "opb_refresh": "Daten neu laden",
+            "opb_unlink": "Verknüpfung lösen"
+          }
+        },
+        "opb_search": {
+          "title": "Art suchen",
+          "data": {
+            "search": "Suchbegriff"
+          }
+        },
+        "opb_pick": {
+          "title": "Art auswählen",
+          "data": {
+            "species": "Art"
+          }
+        },
+        "add_task": {
+          "title": "Weitere Aufgabe",
+          "description": "Eine Zeile pro Zeitraum, z. B. `01.03.–31.10.: 6`. `Pause` oder `ganzjährig: 7` sind möglich.",
+          "data": {
+            "name": "Name",
+            "schedule_text": "Plan",
+            "last_done": "Zuletzt erledigt am"
+          }
+        },
+        "edit_task": {
+          "title": "Aufgabe bearbeiten",
+          "data": {
+            "task": "Aufgabe"
+          }
+        },
+        "edit_task_form": {
+          "title": "Aufgabe bearbeiten",
+          "description": "Eine Zeile pro Zeitraum, z. B. `01.03.–31.10.: 6`. `Pause` oder `ganzjährig: 7` sind möglich.",
+          "data": {
+            "name": "Name",
+            "schedule_text": "Plan"
+          }
+        },
+        "remove_task": {
+          "title": "Aufgabe entfernen",
+          "data": {
+            "task": "Aufgabe"
+          }
+        }
+      },
+      "error": {
+        "invalid_name": "Bitte einen Namen eingeben.",
+        "name_exists": "Es gibt schon eine Pflanze mit diesem Namen.",
+        "invalid_line": "Zeile {line}: Das Format ist ungültig. Erwartet: `01.03.–31.10.: 6`.",
+        "invalid_date": "Zeile {line}: ungültiges Datum.",
+        "invalid_interval": "Zeile {line}: Das Intervall muss 1 bis 365 Tage oder `Pause` sein.",
+        "overlap": "Zeile {line} überschneidet sich mit Zeile {other}.",
+        "sensor_mode_needs_sensor": "Der Modus „Sensor“ braucht einen Feuchtesensor.",
+        "threshold_required": "Bitte eine Gieß-Schwelle angeben.",
+        "task_exists": "Diese Aufgabe gibt es schon."
+      },
+      "abort": {
+        "reconfigure_successful": "Gespeichert.",
+        "not_loaded": "Rootine ist gerade nicht geladen.",
+        "opb_missing": "OpenPlantbook ist nicht installiert.",
+        "opb_failed": "OpenPlantbook hat nicht geantwortet.",
+        "opb_not_linked": "Diese Pflanze ist nicht mit OpenPlantbook verknüpft.",
+        "no_custom_tasks": "Es gibt keine weiteren Aufgaben."
+      }
+    }
+  },
+  "selector": {
+    "location": {
+      "options": {
+        "outdoor": "Draußen",
+        "indoor": "Drinnen"
+      }
+    },
+    "water_mode": {
+      "options": {
+        "timer": "Nach Plan",
+        "rain": "Plan + Regen",
+        "sensor": "Nach Sensor"
+      }
+    },
+    "moisture_method": {
+      "options": {
+        "median_24h": "Median 24 h (Standard)",
+        "max_24h": "Höchstwert 24 h",
+        "raw": "Rohwert"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "care_status": {
+        "name": "Pflegestatus",
+        "state": {
+          "ok": "In Ordnung",
+          "soon": "Morgen fällig",
+          "due": "Heute fällig",
+          "overdue": "Überfällig",
+          "rest": "Pause",
+          "unknown": "Unbekannt",
+          "protect": "Schutz nötig",
+          "too_wet": "Zu nass",
+          "check_sensor": "Sensor prüfen"
+        }
+      },
+      "task_status": {
+        "name": "{task}",
+        "state": {
+          "ok": "In Ordnung",
+          "soon": "Morgen fällig",
+          "due": "Heute fällig",
+          "overdue": "Überfällig",
+          "rest": "Pause",
+          "unknown": "Unbekannt",
+          "protect": "Schutz nötig",
+          "too_wet": "Zu nass",
+          "check_sensor": "Sensor prüfen"
+        }
+      },
+      "task_next_due": {
+        "name": "{task} fällig am"
+      },
+      "due_count": {
+        "name": "Fällige Pflegeaufgaben"
+      },
+      "moisture_eval": {
+        "name": "Bewertete Bodenfeuchte"
+      }
+    },
+    "binary_sensor": {
+      "task_due": {
+        "name": "{task} fällig"
+      },
+      "protect": {
+        "name": "Schutz nötig"
+      },
+      "too_wet": {
+        "name": "Zu nass"
+      },
+      "sensor_check": {
+        "name": "Sensor prüfen"
+      }
+    },
+    "button": {
+      "done_water": {
+        "name": "Gegossen"
+      },
+      "done_fertilize": {
+        "name": "Gedüngt"
+      },
+      "done_custom": {
+        "name": "Erledigt"
+      },
+      "sensor_checked": {
+        "name": "Sensor geprüft"
+      }
+    },
+    "date": {
+      "task_last_done": {
+        "name": "{task} zuletzt"
+      }
+    },
+    "select": {
+      "location": {
+        "name": "Standort",
+        "state": {
+          "outdoor": "Draußen",
+          "indoor": "Drinnen"
+        }
+      }
+    },
+    "number": {
+      "moisture_threshold": {
+        "name": "Gieß-Schwelle"
+      },
+      "moisture_max": {
+        "name": "Zu nass ab"
+      },
+      "temp_min": {
+        "name": "Kälteschutz ab"
+      },
+      "temp_max": {
+        "name": "Hitzeschutz ab"
+      }
+    },
+    "todo": {
+      "care": {
+        "name": "Pflanzenpflege"
+      }
+    }
+  },
+  "exceptions": {
+    "unknown_todo_item": {
+      "message": "Unbekannter Eintrag."
+    },
+    "unknown_plant": {
+      "message": "Diese Entität gehört zu keiner Pflanze von Rootine."
+    },
+    "unknown_task": {
+      "message": "Diese Pflanze hat keine Aufgabe „{task}“."
+    },
+    "unknown_event": {
+      "message": "Unbekanntes Ereignis."
+    },
+    "no_openplantbook": {
+      "message": "OpenPlantbook ist nicht verfügbar."
+    }
+  },
+  "services": {
+    "mark_done": {
+      "name": "Als erledigt markieren",
+      "description": "Setzt eine Aufgabe auf erledigt, optional rückwirkend.",
+      "fields": {
+        "entity_id": {
+          "name": "Pflanze",
+          "description": "Eine Rootine-Entität der Pflanze."
+        },
+        "task": {
+          "name": "Aufgabe",
+          "description": "Schlüssel, z. B. water oder fertilize."
+        },
+        "when": {
+          "name": "Zeitpunkt",
+          "description": "Standard: jetzt."
+        },
+        "note": {
+          "name": "Notiz",
+          "description": "Optionale Notiz im Verlauf."
+        }
+      }
+    },
+    "postpone": {
+      "name": "Verschieben",
+      "description": "Verschiebt die Fälligkeit um n Tage.",
+      "fields": {
+        "entity_id": {
+          "name": "Pflanze",
+          "description": ""
+        },
+        "task": {
+          "name": "Aufgabe",
+          "description": ""
+        },
+        "days": {
+          "name": "Tage",
+          "description": ""
+        }
+      }
+    },
+    "get_due": {
+      "name": "Fälliges abfragen",
+      "description": "Liefert fällige Aufgaben und Warnungen mit deutschen Texten.",
+      "fields": {
+        "days_ahead": {
+          "name": "Tage im Voraus",
+          "description": ""
+        },
+        "include_soon": {
+          "name": "Morgen Fälliges einbeziehen",
+          "description": ""
+        }
+      }
+    },
+    "refresh_species": {
+      "name": "Artdaten neu laden",
+      "description": "Holt die Artdaten erneut von OpenPlantbook.",
+      "fields": {
+        "entity_id": {
+          "name": "Pflanze",
+          "description": ""
+        },
+        "overwrite_manual": {
+          "name": "Eigene Änderungen überschreiben",
+          "description": ""
+        }
+      }
+    },
+    "update_profile": {
+      "name": "Steckbrief ändern",
+      "description": "Ändert nur die übergebenen Felder des Steckbriefs. Ein leerer Text löscht das Feld.",
+      "fields": {
+        "entity_id": {
+          "name": "entity_id",
+          "description": ""
+        },
+        "common_name": {
+          "name": "common_name",
+          "description": ""
+        },
+        "species": {
+          "name": "species",
+          "description": ""
+        },
+        "cultivar": {
+          "name": "cultivar",
+          "description": ""
+        },
+        "rootstock": {
+          "name": "rootstock",
+          "description": ""
+        },
+        "pot": {
+          "name": "pot",
+          "description": ""
+        },
+        "acquired": {
+          "name": "acquired",
+          "description": ""
+        },
+        "care_watering": {
+          "name": "care_watering",
+          "description": ""
+        },
+        "care_sunlight": {
+          "name": "care_sunlight",
+          "description": ""
+        },
+        "care_soil": {
+          "name": "care_soil",
+          "description": ""
+        },
+        "care_pruning": {
+          "name": "care_pruning",
+          "description": ""
+        },
+        "care_fertilization": {
+          "name": "care_fertilization",
+          "description": ""
+        },
+        "notes": {
+          "name": "notes",
+          "description": ""
+        },
+        "photo": {
+          "name": "photo",
+          "description": ""
+        }
+      }
+    },
+    "set_photo": {
+      "name": "Foto setzen",
+      "description": "Setzt das eigene Foto. Ohne Foto gilt wieder das OpenPlantbook-Bild.",
+      "fields": {
+        "entity_id": {
+          "name": "Pflanze",
+          "description": ""
+        },
+        "photo": {
+          "name": "Foto",
+          "description": ""
+        }
+      }
+    },
+    "get_history": {
+      "name": "Verlauf abfragen",
+      "description": "Liefert den Pflegeverlauf.",
+      "fields": {
+        "entity_id": {
+          "name": "Pflanze",
+          "description": ""
+        },
+        "limit": {
+          "name": "Anzahl",
+          "description": ""
+        }
+      }
+    },
+    "undo_event": {
+      "name": "Ereignis rückgängig",
+      "description": "Markiert einen Verlaufseintrag als rückgängig.",
+      "fields": {
+        "entity_id": {
+          "name": "Pflanze",
+          "description": ""
+        },
+        "event_id": {
+          "name": "Ereignis",
+          "description": ""
+        }
+      }
+    }
+  }
+}

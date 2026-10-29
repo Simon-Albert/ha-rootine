@@ -1,0 +1,593 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Rootine",
+        "description": "Care routines for plants. All fields are optional defaults for every plant.",
+        "data": {
+          "rain_entity": "Rain sensor (daily total)",
+          "rain_threshold": "Rain threshold",
+          "default_location": "Default location for new plants",
+          "weather_entity": "Weather (forecast)",
+          "outdoor_temp_entity": "Outdoor temperature"
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Rootine is already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Rootine",
+        "data": {
+          "rain_entity": "Rain sensor (daily total)",
+          "rain_threshold": "Rain threshold",
+          "default_location": "Default location for new plants",
+          "weather_entity": "Weather (forecast)",
+          "outdoor_temp_entity": "Outdoor temperature"
+        }
+      }
+    }
+  },
+  "config_subentries": {
+    "plant": {
+      "initiate_flow": {
+        "user": "Add plant",
+        "reconfigure": "Edit plant"
+      },
+      "entry_type": "Plant",
+      "step": {
+        "user": {
+          "title": "New plant",
+          "data": {
+            "name": "Name",
+            "location": "Location",
+            "search": "Search species at OpenPlantbook (optional)"
+          }
+        },
+        "profile": {
+          "title": "Plant profile",
+          "description": "Everything is optional and can be changed later.\nImage: {image}",
+          "data": {
+            "common_name": "Common name",
+            "species": "Species",
+            "cultivar": "Cultivar",
+            "rootstock": "Rootstock",
+            "pot": "Pot",
+            "acquired": "Acquired",
+            "care_watering": "Care: watering",
+            "care_sunlight": "Care: sunlight",
+            "care_soil": "Care: soil",
+            "care_pruning": "Care: pruning",
+            "care_fertilization": "Care: fertilizing",
+            "notes": "Notes",
+            "photo": "Photo"
+          }
+        },
+        "water": {
+          "title": "Watering",
+          "description": "Care text: {care}\n\nOne line per period, e.g. `01.03.–31.10.: 6`. `Pause` or `ganzjährig: 7` also work.",
+          "data": {
+            "schedule_text": "Schedule",
+            "last_done": "Last watered on",
+            "mode": "Mode",
+            "moisture_threshold": "Watering threshold (%)",
+            "moisture_method": "Moisture evaluation",
+            "valve_counts_as_watering": "Valve run counts as watered"
+          }
+        },
+        "fertilize": {
+          "title": "Fertilizing",
+          "description": "Care text: {care}\n\nLeave empty for no fertilizing.\n\nOne line per period, e.g. `01.03.–31.10.: 6` and `01.11.–28.02.: 8`. `Pause` or `ganzjährig: 7` also work (day.month. format).",
+          "data": {
+            "schedule_text": "Schedule",
+            "last_done": "Last fertilized on"
+          }
+        },
+        "reconfigure": {
+          "title": "Edit plant",
+          "menu_options": {
+            "general": "General",
+            "profile_edit": "Profile",
+            "photo": "Photo",
+            "water_edit": "Watering",
+            "fertilize_edit": "Fertilizing",
+            "openplantbook": "OpenPlantbook",
+            "sensors_edit": "Sensors",
+            "limits_edit": "Limits",
+            "add_task": "Add task",
+            "edit_task": "Edit task",
+            "remove_task": "Remove task"
+          }
+        },
+        "general": {
+          "title": "General",
+          "data": {
+            "name": "Name",
+            "location": "Location"
+          }
+        },
+        "profile_edit": {
+          "title": "Profile",
+          "data": {
+            "common_name": "Common name",
+            "species": "Species",
+            "cultivar": "Cultivar",
+            "rootstock": "Rootstock",
+            "pot": "Pot",
+            "acquired": "Acquired",
+            "care_watering": "Care: watering",
+            "care_sunlight": "Care: sunlight",
+            "care_soil": "Care: soil",
+            "care_pruning": "Care: pruning",
+            "care_fertilization": "Care: fertilizing",
+            "notes": "Notes",
+            "photo": "Photo"
+          }
+        },
+        "photo": {
+          "title": "Photo",
+          "data": {
+            "photo": "Photo"
+          },
+          "description": "Leave empty and save to remove the photo."
+        },
+        "water_edit": {
+          "title": "Watering",
+          "description": "Care text: {care}\n\nOne line per period, e.g. `01.03.–31.10.: 6`. `Pause` or `ganzjährig: 7` also work.",
+          "data": {
+            "schedule_text": "Schedule",
+            "mode": "Mode",
+            "moisture_threshold": "Watering threshold (%)",
+            "moisture_method": "Moisture evaluation",
+            "valve_counts_as_watering": "Valve run counts as watered"
+          }
+        },
+        "fertilize_edit": {
+          "title": "Fertilizing",
+          "description": "Care text: {care}\n\nLeave empty for no fertilizing.\n\nOne line per period, e.g. `01.03.–31.10.: 6` and `01.11.–28.02.: 8`. `Pause` or `ganzjährig: 7` also work (day.month. format).",
+          "data": {
+            "schedule_text": "Schedule"
+          }
+        },
+        "search": {
+          "title": "Search species",
+          "data": {
+            "search": "Search term"
+          }
+        },
+        "species": {
+          "title": "Choose species",
+          "description": "{found} results.",
+          "data": {
+            "species": "Species"
+          }
+        },
+        "sensors": {
+          "title": "Sensors",
+          "description": "All optional. Without a moisture sensor the plant follows its schedule.",
+          "data": {
+            "moisture_entity": "Moisture sensor",
+            "temperature_entity": "Temperature sensor",
+            "battery_entity": "Battery",
+            "valve_entity": "Irrigation valve"
+          }
+        },
+        "sensors_edit": {
+          "title": "Sensors",
+          "data": {
+            "moisture_entity": "Moisture sensor",
+            "temperature_entity": "Temperature sensor",
+            "battery_entity": "Battery",
+            "valve_entity": "Irrigation valve"
+          }
+        },
+        "limits": {
+          "title": "Limits",
+          "description": "All optional. OpenPlantbook suggests {hint} (comfort range, not meant for frost protection).",
+          "data": {
+            "temp_min": "Cold protection below (°C)",
+            "temp_max": "Heat protection above (°C)",
+            "moisture_max": "Too wet from (%)",
+            "rain_threshold": "Own rain threshold (mm)"
+          }
+        },
+        "limits_edit": {
+          "title": "Limits",
+          "description": "Empty field = off.",
+          "data": {
+            "temp_min": "Cold protection below (°C)",
+            "temp_max": "Heat protection above (°C)",
+            "moisture_max": "Too wet from (%)",
+            "rain_threshold": "Own rain threshold (mm)"
+          }
+        },
+        "openplantbook": {
+          "title": "OpenPlantbook",
+          "menu_options": {
+            "opb_search": "Search and link species",
+            "opb_refresh": "Reload data",
+            "opb_unlink": "Unlink"
+          }
+        },
+        "opb_search": {
+          "title": "Search species",
+          "data": {
+            "search": "Search term"
+          }
+        },
+        "opb_pick": {
+          "title": "Choose species",
+          "data": {
+            "species": "Species"
+          }
+        },
+        "add_task": {
+          "title": "Additional task",
+          "description": "One line per period, e.g. `01.03.–31.10.: 6`. `Pause` or `ganzjährig: 7` also work.",
+          "data": {
+            "name": "Name",
+            "schedule_text": "Schedule",
+            "last_done": "Last done on"
+          }
+        },
+        "edit_task": {
+          "title": "Edit task",
+          "data": {
+            "task": "Task"
+          }
+        },
+        "edit_task_form": {
+          "title": "Edit task",
+          "description": "One line per period, e.g. `01.03.–31.10.: 6`. `Pause` or `ganzjährig: 7` also work.",
+          "data": {
+            "name": "Name",
+            "schedule_text": "Schedule"
+          }
+        },
+        "remove_task": {
+          "title": "Remove task",
+          "data": {
+            "task": "Task"
+          }
+        }
+      },
+      "error": {
+        "invalid_name": "Please enter a name.",
+        "name_exists": "A plant with this name already exists.",
+        "invalid_line": "Line {line}: invalid format. Expected: `01.03.–31.10.: 6`.",
+        "invalid_date": "Line {line}: invalid date.",
+        "invalid_interval": "Line {line}: interval must be 1 to 365 days or `Pause`.",
+        "overlap": "Line {line} overlaps line {other}.",
+        "sensor_mode_needs_sensor": "Mode “sensor” needs a moisture sensor.",
+        "threshold_required": "Please enter a watering threshold.",
+        "task_exists": "This task already exists."
+      },
+      "abort": {
+        "reconfigure_successful": "Saved.",
+        "not_loaded": "Rootine is not loaded right now.",
+        "opb_missing": "OpenPlantbook is not installed.",
+        "opb_failed": "OpenPlantbook did not answer.",
+        "opb_not_linked": "This plant is not linked to OpenPlantbook.",
+        "no_custom_tasks": "There are no additional tasks."
+      }
+    }
+  },
+  "selector": {
+    "location": {
+      "options": {
+        "outdoor": "Outdoor",
+        "indoor": "Indoor"
+      }
+    },
+    "water_mode": {
+      "options": {
+        "timer": "By schedule",
+        "rain": "Schedule + rain",
+        "sensor": "By sensor"
+      }
+    },
+    "moisture_method": {
+      "options": {
+        "median_24h": "Median 24 h (default)",
+        "max_24h": "Maximum 24 h",
+        "raw": "Raw value"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "care_status": {
+        "name": "Care status",
+        "state": {
+          "ok": "OK",
+          "soon": "Due tomorrow",
+          "due": "Due today",
+          "overdue": "Overdue",
+          "rest": "Resting",
+          "unknown": "Unknown",
+          "protect": "Protection needed",
+          "too_wet": "Too wet",
+          "check_sensor": "Check sensor"
+        }
+      },
+      "task_status": {
+        "name": "{task}",
+        "state": {
+          "ok": "OK",
+          "soon": "Due tomorrow",
+          "due": "Due today",
+          "overdue": "Overdue",
+          "rest": "Resting",
+          "unknown": "Unknown",
+          "protect": "Protection needed",
+          "too_wet": "Too wet",
+          "check_sensor": "Check sensor"
+        }
+      },
+      "task_next_due": {
+        "name": "{task} due on"
+      },
+      "due_count": {
+        "name": "Due care tasks"
+      },
+      "moisture_eval": {
+        "name": "Evaluated soil moisture"
+      }
+    },
+    "binary_sensor": {
+      "task_due": {
+        "name": "{task} due"
+      },
+      "protect": {
+        "name": "Protection needed"
+      },
+      "too_wet": {
+        "name": "Too wet"
+      },
+      "sensor_check": {
+        "name": "Check sensor"
+      }
+    },
+    "button": {
+      "done_water": {
+        "name": "Watered"
+      },
+      "done_fertilize": {
+        "name": "Fertilized"
+      },
+      "done_custom": {
+        "name": "Done"
+      },
+      "sensor_checked": {
+        "name": "Sensor checked"
+      }
+    },
+    "date": {
+      "task_last_done": {
+        "name": "{task} last done"
+      }
+    },
+    "select": {
+      "location": {
+        "name": "Location",
+        "state": {
+          "outdoor": "Outdoor",
+          "indoor": "Indoor"
+        }
+      }
+    },
+    "number": {
+      "moisture_threshold": {
+        "name": "Watering threshold"
+      },
+      "moisture_max": {
+        "name": "Too wet from"
+      },
+      "temp_min": {
+        "name": "Cold protection below"
+      },
+      "temp_max": {
+        "name": "Heat protection above"
+      }
+    },
+    "todo": {
+      "care": {
+        "name": "Plant care"
+      }
+    }
+  },
+  "exceptions": {
+    "unknown_todo_item": {
+      "message": "Unknown item."
+    },
+    "unknown_plant": {
+      "message": "This entity does not belong to a Rootine plant."
+    },
+    "unknown_task": {
+      "message": "This plant has no task “{task}”."
+    },
+    "unknown_event": {
+      "message": "Unknown event."
+    },
+    "no_openplantbook": {
+      "message": "OpenPlantbook is not available."
+    }
+  },
+  "services": {
+    "mark_done": {
+      "name": "Mark done",
+      "description": "Marks a task as done, optionally in the past.",
+      "fields": {
+        "entity_id": {
+          "name": "Plant",
+          "description": "Any Rootine entity of the plant."
+        },
+        "task": {
+          "name": "Task",
+          "description": "Key, e.g. water or fertilize."
+        },
+        "when": {
+          "name": "When",
+          "description": "Default: now."
+        },
+        "note": {
+          "name": "Note",
+          "description": "Optional note for the history."
+        }
+      }
+    },
+    "postpone": {
+      "name": "Postpone",
+      "description": "Postpones the due date by n days.",
+      "fields": {
+        "entity_id": {
+          "name": "Plant",
+          "description": ""
+        },
+        "task": {
+          "name": "Task",
+          "description": ""
+        },
+        "days": {
+          "name": "Days",
+          "description": ""
+        }
+      }
+    },
+    "get_due": {
+      "name": "Get due items",
+      "description": "Returns due tasks and warnings with ready-made texts.",
+      "fields": {
+        "days_ahead": {
+          "name": "Days ahead",
+          "description": ""
+        },
+        "include_soon": {
+          "name": "Include due tomorrow",
+          "description": ""
+        }
+      }
+    },
+    "refresh_species": {
+      "name": "Reload species data",
+      "description": "Fetches the species data again from OpenPlantbook.",
+      "fields": {
+        "entity_id": {
+          "name": "Plant",
+          "description": ""
+        },
+        "overwrite_manual": {
+          "name": "Overwrite manual changes",
+          "description": ""
+        }
+      }
+    },
+    "update_profile": {
+      "name": "Update profile",
+      "description": "Changes only the given profile fields. An empty text clears the field.",
+      "fields": {
+        "entity_id": {
+          "name": "entity_id",
+          "description": ""
+        },
+        "common_name": {
+          "name": "common_name",
+          "description": ""
+        },
+        "species": {
+          "name": "species",
+          "description": ""
+        },
+        "cultivar": {
+          "name": "cultivar",
+          "description": ""
+        },
+        "rootstock": {
+          "name": "rootstock",
+          "description": ""
+        },
+        "pot": {
+          "name": "pot",
+          "description": ""
+        },
+        "acquired": {
+          "name": "acquired",
+          "description": ""
+        },
+        "care_watering": {
+          "name": "care_watering",
+          "description": ""
+        },
+        "care_sunlight": {
+          "name": "care_sunlight",
+          "description": ""
+        },
+        "care_soil": {
+          "name": "care_soil",
+          "description": ""
+        },
+        "care_pruning": {
+          "name": "care_pruning",
+          "description": ""
+        },
+        "care_fertilization": {
+          "name": "care_fertilization",
+          "description": ""
+        },
+        "notes": {
+          "name": "notes",
+          "description": ""
+        },
+        "photo": {
+          "name": "photo",
+          "description": ""
+        }
+      }
+    },
+    "set_photo": {
+      "name": "Set photo",
+      "description": "Sets the own photo. Without a photo the OpenPlantbook image is used.",
+      "fields": {
+        "entity_id": {
+          "name": "Plant",
+          "description": ""
+        },
+        "photo": {
+          "name": "Photo",
+          "description": ""
+        }
+      }
+    },
+    "get_history": {
+      "name": "Get history",
+      "description": "Returns the care history.",
+      "fields": {
+        "entity_id": {
+          "name": "Plant",
+          "description": ""
+        },
+        "limit": {
+          "name": "Limit",
+          "description": ""
+        }
+      }
+    },
+    "undo_event": {
+      "name": "Undo event",
+      "description": "Marks a history entry as undone.",
+      "fields": {
+        "entity_id": {
+          "name": "Plant",
+          "description": ""
+        },
+        "event_id": {
+          "name": "Event",
+          "description": ""
+        }
+      }
+    }
+  }
+}

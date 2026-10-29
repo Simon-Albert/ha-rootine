@@ -1,0 +1,119 @@
+{
+  "entity": {
+    "sensor": {
+      "care_status": {
+        "default": "mdi:sprout",
+        "state": {
+          "overdue": "mdi:watering-can-outline",
+          "due": "mdi:watering-can",
+          "protect": "mdi:snowflake-alert",
+          "too_wet": "mdi:water-alert",
+          "check_sensor": "mdi:magnify",
+          "rest": "mdi:sleep"
+        }
+      },
+      "task_status": {
+        "default": "mdi:clipboard-check-outline"
+      },
+      "task_next_due": {
+        "default": "mdi:calendar-clock"
+      },
+      "due_count": {
+        "default": "mdi:sprout-outline"
+      },
+      "moisture_eval": {
+        "default": "mdi:water-percent"
+      }
+    },
+    "binary_sensor": {
+      "task_due": {
+        "default": "mdi:bell-outline",
+        "state": {
+          "on": "mdi:bell-ring"
+        }
+      },
+      "protect": {
+        "default": "mdi:snowflake-alert"
+      },
+      "too_wet": {
+        "default": "mdi:water-alert"
+      },
+      "sensor_check": {
+        "default": "mdi:magnify"
+      }
+    },
+    "button": {
+      "done_water": {
+        "default": "mdi:watering-can"
+      },
+      "done_fertilize": {
+        "default": "mdi:bottle-tonic"
+      },
+      "done_custom": {
+        "default": "mdi:check"
+      },
+      "sensor_checked": {
+        "default": "mdi:check-circle-outline"
+      }
+    },
+    "date": {
+      "task_last_done": {
+        "default": "mdi:calendar-check"
+      }
+    },
+    "select": {
+      "location": {
+        "default": "mdi:map-marker",
+        "state": {
+          "outdoor": "mdi:tree",
+          "indoor": "mdi:home"
+        }
+      }
+    },
+    "number": {
+      "moisture_threshold": {
+        "default": "mdi:water-minus"
+      },
+      "moisture_max": {
+        "default": "mdi:water-plus"
+      },
+      "temp_min": {
+        "default": "mdi:thermometer-low"
+      },
+      "temp_max": {
+        "default": "mdi:thermometer-high"
+      }
+    },
+    "todo": {
+      "care": {
+        "default": "mdi:sprout"
+      }
+    }
+  },
+  "services": {
+    "mark_done": {
+      "service": "mdi:check"
+    },
+    "postpone": {
+      "service": "mdi:calendar-arrow-right"
+    },
+    "get_due": {
+      "service": "mdi:clipboard-list"
+    },
+    "refresh_species": {
+      "service": "mdi:cloud-refresh"
+    },
+    "update_profile": {
+      "service": "mdi:card-account-details"
+    },
+    "set_photo": {
+      "service": "mdi:camera"
+    },
+    "get_history": {
+      "service": "mdi:history"
+    },
+    "undo_event": {
+      "service": "mdi:undo"
+    }
+  }
+}

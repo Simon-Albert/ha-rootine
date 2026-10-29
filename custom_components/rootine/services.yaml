@@ -1,0 +1,152 @@
+mark_done:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          integration: rootine
+    task:
+      required: true
+      example: water
+      selector:
+        text:
+    when:
+      selector:
+        datetime:
+    note:
+      selector:
+        text:
+postpone:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          integration: rootine
+    task:
+      required: true
+      example: water
+      selector:
+        text:
+    days:
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 60
+          mode: box
+get_due:
+  fields:
+    days_ahead:
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 14
+          mode: box
+    include_soon:
+      default: true
+      selector:
+        boolean:
+refresh_species:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          integration: rootine
+    overwrite_manual:
+      default: false
+      selector:
+        boolean:
+update_profile:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          integration: rootine
+    common_name:
+      selector:
+        text:
+    species:
+      selector:
+        text:
+    cultivar:
+      selector:
+        text:
+    rootstock:
+      selector:
+        text:
+    pot:
+      selector:
+        text:
+    acquired:
+      selector:
+        text:
+    care_watering:
+      selector:
+        text:
+          multiline: true
+    care_sunlight:
+      selector:
+        text:
+          multiline: true
+    care_soil:
+      selector:
+        text:
+          multiline: true
+    care_pruning:
+      selector:
+        text:
+          multiline: true
+    care_fertilization:
+      selector:
+        text:
+          multiline: true
+    notes:
+      selector:
+        text:
+          multiline: true
+    photo:
+      selector:
+        media:
+          accept:
+            - image/*
+set_photo:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          integration: rootine
+    photo:
+      selector:
+        media:
+          accept:
+            - image/*
+get_history:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          integration: rootine
+    limit:
+      default: 50
+      selector:
+        number:
+          min: 1
+          max: 200
+          mode: box
+undo_event:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          integration: rootine
+    event_id:
+      required: true
+      selector:
+        text:

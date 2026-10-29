@@ -1,0 +1,20 @@
+{
+  "domain": "rootine",
+  "name": "Rootine",
+  "after_dependencies": [
+    "frontend",
+    "http",
+    "openplantbook"
+  ],
+  "codeowners": [
+    "@Simon-Albert"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/Simon-Albert/ha-rootine",
+  "integration_type": "hub",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/Simon-Albert/ha-rootine/issues",
+  "requirements": [],
+  "single_config_entry": true,
+  "version": "1.0.0"
+}
