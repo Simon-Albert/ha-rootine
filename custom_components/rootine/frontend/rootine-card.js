@@ -17,7 +17,7 @@ const T = {
     reason: { cold_now: "zu kalt", cold_forecast: "Kälte erwartet", heat_now: "zu heiß",
       heat_forecast: "Hitze erwartet", drop: "Wert stark gefallen", stale: "meldet nicht",
       battery_low: "Batterie schwach" },
-    done: "Erledigt", water: "Gegossen", fertilize: "Gedüngt", postpone: "Verschieben",
+    done: "Erledigt", noFertilize: "Düngen", noFertilizeHint: "nicht nötig", water: "Gegossen", fertilize: "Gedüngt", postpone: "Verschieben",
     days: (n) => (n === 0 ? "heute" : n === 1 ? "morgen" : n < 0 ? `seit ${-n} Tg.` : `in ${n} Tg.`),
     details: "Details", close: "Schließen", edit: "Bearbeiten", save: "Speichern", cancel: "Abbrechen",
     photo: "Foto ändern", history: "Verlauf", undo: "Rückgängig", undone: "rückgängig",
@@ -45,7 +45,7 @@ const T = {
     reason: { cold_now: "too cold", cold_forecast: "cold expected", heat_now: "too hot",
       heat_forecast: "heat expected", drop: "value dropped", stale: "not reporting",
       battery_low: "battery low" },
-    done: "Done", water: "Watered", fertilize: "Fertilized", postpone: "Postpone",
+    done: "Done", noFertilize: "Fertilize", noFertilizeHint: "not needed", water: "Watered", fertilize: "Fertilized", postpone: "Postpone",
     days: (n) => (n === 0 ? "today" : n === 1 ? "tomorrow" : n < 0 ? `${-n}d overdue` : `in ${n}d`),
     details: "Details", close: "Close", edit: "Edit", save: "Save", cancel: "Cancel",
     photo: "Change photo", history: "History", undo: "Undo", undone: "undone",
@@ -132,6 +132,8 @@ ha-card { padding: 12px; overflow: hidden; background: var(--ha-card-background,
 .tasks { display: flex; flex-direction: column; gap: 4px; }
 .task { display: flex; align-items: center; gap: 8px; font-size: .92em; }
 .task .label { flex: 1; min-width: 3.5em; }
+.task.none { opacity: .7; }
+.task.none .when { margin-right: 4px; }
 .task .when { color: var(--secondary-text-color); font-size: .85em; white-space: nowrap; }
 button, select, input, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; border: 1px solid color-mix(in srgb, var(--primary-text-color) 20%, transparent);
@@ -360,13 +362,14 @@ class RootineCard extends HTMLElement {
       `<span class="chip" style="background:${COLORS[w.key === "sensor_check" ? "check_sensor" : w.key]}" title="${esc(t.reason[w.reason] || "")}">${esc(t.warn[w.key])}${w.reason ? ` · ${esc(t.reason[w.reason] || w.reason)}` : ""}</span>`).join("");
     const tasks = this._items(a).map((item) => `<div class="task">${this._chip(item.status)}<span class="label">${esc(item.name)}</span>
         <span class="when">${esc(this._when(item))}</span><button data-done="${esc(item.key)}" data-plant="${esc(p.id)}">${esc(this._verb(item))}</button></div>`).join("");
+    const noFert = a.tasks?.fertilize ? "" : `<div class="task none"><span class="chip" style="background:${COLORS.rest}">${esc(t.status.rest || "")}</span><span class="label">${esc(t.noFertilize)}</span><span class="when">${esc(t.noFertilizeHint)}</span></div>`;
     const m = a.moisture;
     const bar = m && m.value != null
       ? `<div><div class="bar"><div class="fill" style="width:${Math.max(0, Math.min(100, m.value))}%"></div>${m.threshold != null ? `<div class="mark" style="left:${m.threshold}%" title="${esc(t.threshold)} ${m.threshold} %"></div>` : ""}</div>
          <div class="barlabel"><span>${esc(t.eval)} ${Math.round(m.value)} %</span><span>${m.threshold != null ? `${esc(t.threshold)} ${m.threshold} %` : ""}</span></div></div>` : "";
     return `<div class="plant" style="--accent:${COLORS[p.state] || COLORS.unknown}"><div class="top">${pic}<div class="title"><div class="name">${esc(p.name)}</div>
       <div class="sub">${esc(sub || "")} · ${esc(t[a.location] || a.location)}</div></div>${this._chip(p.state)}</div>
-      ${warns ? `<div class="warn">${warns}</div>` : ""}${bar}<div class="tasks">${tasks}</div>
+      ${warns ? `<div class="warn">${warns}</div>` : ""}${bar}<div class="tasks">${tasks}${noFert}</div>
       <div class="actions"><button class="ghost" data-details="${esc(p.id)}">${t.details}</button></div></div>`;
   }
 
