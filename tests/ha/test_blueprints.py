@@ -61,3 +61,6 @@ async def test_daily_reminder_runs(hass, freezer):
     assert len(sent) == 1
     assert "Kirsche" in sent[0].data["message"]
     assert int(sent[0].data["n"]) == 1
+    # detach the time trigger, otherwise its timer for tomorrow 08:00 lingers after the test
+    await hass.services.async_call("automation", "turn_off", {"entity_id": "all"}, blocking=True)
+    await hass.async_block_till_done()
