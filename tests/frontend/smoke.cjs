@@ -40,7 +40,11 @@ const states = {
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   await page.setContent("<body style='background:#1c1c1e;color:#eee;font-family:sans-serif;--primary-color:#03a9f4;--primary-text-color:#eee;--secondary-text-color:#aaa;--card-background-color:#2b2b30'></body>");
-  await page.addScriptTag({ path: path.join(__dirname, "../../custom_components/rootine/frontend/rootine-card.js") });
+  const cardFile = path.join(__dirname, "../../custom_components/rootine/frontend/rootine-card.js");
+  // Loaded twice on purpose: HA may load the card both as an extra module and as a dashboard resource.
+  await page.addScriptTag({ path: cardFile, type: "module" });
+  await page.addScriptTag({ path: cardFile, type: "module" });
+  await page.waitForFunction(() => customElements.get("rootine-card"));
   const result = await page.evaluate(async (states) => {
     const calls = [];
     const now = Date.now();

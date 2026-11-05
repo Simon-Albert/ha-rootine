@@ -6,7 +6,7 @@
  *         mode: overview                          # or: all plants
  *         layout: compact                         # optional: one row per plant (phones)
  */
-const VERSION = "1.2.0";
+const VERSION = "1.3.1";
 
 const T = {
   de: {
@@ -728,8 +728,11 @@ class RootineCardEditor extends HTMLElement {
   }
 }
 
-customElements.define("rootine-card", RootineCard);
-customElements.define("rootine-card-editor", RootineCardEditor);
-window.customCards = window.customCards || [];
-window.customCards.push({ type: "rootine-card", name: "Rootine", description: "Plant care overview", preview: false });
-console.info(`%c ROOTINE-CARD %c ${VERSION} `, "color:#fff;background:#22c55e", "");
+// The card may be loaded twice (extra module and dashboard resource): register only once.
+if (!customElements.get("rootine-card")) {
+  customElements.define("rootine-card", RootineCard);
+  customElements.define("rootine-card-editor", RootineCardEditor);
+  window.customCards = window.customCards || [];
+  window.customCards.push({ type: "rootine-card", name: "Rootine", description: "Plant care overview", preview: false });
+  console.info(`%c ROOTINE-CARD %c ${VERSION} `, "color:#fff;background:#22c55e", "");
+}

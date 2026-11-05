@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
 from homeassistant.core import HomeAssistant
@@ -22,4 +23,6 @@ async def async_register_card(hass: HomeAssistant) -> None:
     await hass.http.async_register_static_paths(
         [StaticPathConfig(CARD_URL, str(CARD_FILE), cache_headers=False)]
     )
-    add_extra_js_url(hass, f"{CARD_URL}?v={VERSION}")
+    # A new URL on every start: if a phone cached a broken response for the card
+    # (for example a proxy error page while HA was restarting), it is not reused.
+    add_extra_js_url(hass, f"{CARD_URL}?v={VERSION}-{int(time.time()):x}")

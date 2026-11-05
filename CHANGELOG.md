@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.1
+
+**Behoben**
+
+- Am Handy stand statt der Pflanzenkarten oft nur „Konfigurationsfehler“ („Custom element doesn't exist: rootine-card“). Hatte die App beim Neustart von Home Assistant eine Fehlerseite statt der Karte zwischengespeichert, lud sie die Karte nie wieder. Die Karte bekommt jetzt bei jedem Start eine neue Adresse, eine alte Fehlerseite wird so nicht mehr verwendet.
+- Die Karte darf doppelt geladen werden, zum Beispiel zusätzlich als Dashboard-Ressource, ohne dass sie sich selbst blockiert.
+
 ## 1.3.0
 
 **Neu**
